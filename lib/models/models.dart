@@ -17,6 +17,7 @@ class Article {
   final List<Referensi> referensi;
   final List<Article> related;
   final List<Comment> comments;
+  final List<AdBanner> adsAtas;
 
   Article({
     required this.id,
@@ -35,6 +36,7 @@ class Article {
     this.referensi = const [],
     this.related = const [],
     this.comments = const [],
+    this.adsAtas = const [],
   });
 
   factory Article.fromJson(Map<String, dynamic> j) => Article(
@@ -56,6 +58,9 @@ class Article {
         referensi: (j['referensi'] as List? ?? []).map((e) => Referensi.fromJson(e)).toList(),
         related: (j['related'] as List? ?? []).map((e) => Article.fromJson(e)).toList(),
         comments: (j['comments'] as List? ?? []).map((e) => Comment.fromJson(e)).toList(),
+        adsAtas: (j['ads_atas'] as List? ?? [])
+            .map((e) => AdBanner.fromJson(Map<String, dynamic>.from(e)))
+            .toList(),
       );
 
   Map<String, dynamic> toBookmark() => {
@@ -125,10 +130,20 @@ class Category {
 class AdBanner {
   final String image;
   final String? link;
-  AdBanner({required this.image, this.link});
+
+  /// Kategori tempat iklan ini ditampilkan (khusus iklan antar-kategori).
+  /// `null` = bergilir di celah kategori yang belum punya iklan khusus.
+  final int? categoryId;
+
+  AdBanner({required this.image, this.link, this.categoryId});
   factory AdBanner.fromJson(Map<String, dynamic> j) {
     final link = (j['link'] ?? '') as String;
-    return AdBanner(image: j['image'] ?? '', link: link.isEmpty ? null : link);
+    final cat = j['category_id'];
+    return AdBanner(
+      image: j['image'] ?? '',
+      link: link.isEmpty ? null : link,
+      categoryId: cat is int ? cat : (cat == null ? null : int.tryParse('$cat')),
+    );
   }
 }
 
@@ -169,6 +184,9 @@ class HomeData {
   final AdBanner? adsMiddle;
   final List<AdBanner> banners;
   final AdBanner? adsBottom;
+  final List<AdBanner> adsKategori;
+  final List<AdBanner> adsAtas;
+  final List<AdBanner> adsBawah;
   final bool showPertanyaan;
   final bool showYoutube;
 
@@ -184,6 +202,9 @@ class HomeData {
     this.adsMiddle,
     this.banners = const [],
     this.adsBottom,
+    this.adsKategori = const [],
+    this.adsAtas = const [],
+    this.adsBawah = const [],
     required this.showPertanyaan,
     required this.showYoutube,
   });
@@ -200,6 +221,15 @@ class HomeData {
         adsMiddle: j['ads_middle'] == null ? null : AdBanner.fromJson(Map<String, dynamic>.from(j['ads_middle'])),
         banners: (j['banners'] as List? ?? []).map((e) => AdBanner.fromJson(Map<String, dynamic>.from(e))).toList(),
         adsBottom: j['ads_bottom'] == null ? null : AdBanner.fromJson(Map<String, dynamic>.from(j['ads_bottom'])),
+        adsKategori: (j['ads_kategori'] as List? ?? [])
+            .map((e) => AdBanner.fromJson(Map<String, dynamic>.from(e)))
+            .toList(),
+        adsAtas: (j['ads_atas'] as List? ?? [])
+            .map((e) => AdBanner.fromJson(Map<String, dynamic>.from(e)))
+            .toList(),
+        adsBawah: (j['ads_bawah'] as List? ?? [])
+            .map((e) => AdBanner.fromJson(Map<String, dynamic>.from(e)))
+            .toList(),
         showPertanyaan: j['show_pertanyaan'] ?? true,
         showYoutube: j['show_youtube'] ?? true,
       );

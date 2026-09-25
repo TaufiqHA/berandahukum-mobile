@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 
+import '../../core/html_utils.dart';
 import '../../core/theme.dart';
 import '../../services/admin_api.dart';
 import 'admin_ui.dart';
@@ -30,7 +31,7 @@ class _AdminArticleCommentsScreenState extends State<AdminArticleCommentsScreen>
   }
 
   Future<void> _reload() async {
-    setState(() => _future = _load());
+    setState(() { _future = _load(); });
     await _future;
   }
 
@@ -133,7 +134,7 @@ class AdminCommentTile extends StatelessWidget {
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 10.5, letterSpacing: .8, color: AppTheme.brand)),
               const SizedBox(height: 4),
               HtmlWidget(
-                row['reply'].toString(),
+                sanitizeCmsHtml(row['reply'].toString()),
                 textStyle: const TextStyle(fontSize: 12.5, height: 1.45, color: AppTheme.ink600),
               ),
             ]),

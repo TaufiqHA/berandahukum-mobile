@@ -20,7 +20,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Future<void> _refresh() async {
-    setState(() => _future = AdminApi.dashboard());
+    setState(() { _future = AdminApi.dashboard(); });
     await _future;
   }
 

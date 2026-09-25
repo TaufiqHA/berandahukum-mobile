@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../core/html_utils.dart';
 import '../core/theme.dart';
 import '../models/models.dart';
 import '../services/api.dart';
@@ -97,7 +98,7 @@ class _InfoDetailScreenState extends State<InfoDetailScreen> {
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
             children: [
               HtmlWidget(
-                snap.data!.content,
+                sanitizeCmsHtml(snap.data!.content),
                 textStyle: const TextStyle(fontSize: 16, height: 1.7),
                 onTapUrl: (url) {
                   launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);

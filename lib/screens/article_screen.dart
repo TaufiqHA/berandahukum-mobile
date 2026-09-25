@@ -4,10 +4,12 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/config.dart';
+import '../core/html_utils.dart';
 import '../core/theme.dart';
 import '../models/models.dart';
 import '../services/api.dart';
 import '../state/bookmarks.dart';
+import '../widgets/site_widgets.dart';
 import '../widgets/widgets.dart';
 
 class ArticleScreen extends StatefulWidget {
@@ -103,19 +105,31 @@ class _ArticleScreenState extends State<ArticleScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
       children: [
+        // Iklan di atas artikel (maks 2, dari panel admin)
+        for (final b in a.adsAtas) ...[
+          AdBannerView(
+            ad: b,
+            padding: const EdgeInsets.only(bottom: 12),
+            onArticle: (uri) => Navigator.push(
+                context, MaterialPageRoute(builder: (_) => ArticleScreen(uri: uri))),
+          ),
+        ],
         if (a.labelName != null)
           Text(a.labelName!.toUpperCase(), style: const TextStyle(color: AppTheme.brand, fontWeight: FontWeight.w800, letterSpacing: 1, fontSize: 11)),
         const SizedBox(height: 6),
         Text(a.title, style: const TextStyle(fontFamily: 'serif', fontSize: 27, fontWeight: FontWeight.w700, height: 1.12, color: AppTheme.ink)),
         const SizedBox(height: 12),
-        Text('${formatDate(a.date)}   ·   ${a.author}   ·   ${a.views}x dibaca',
+        Text(a.author,
+            style: const TextStyle(fontSize: 11.5, letterSpacing: .4, fontWeight: FontWeight.w600, color: AppTheme.ink600)),
+        const SizedBox(height: 2),
+        Text('${formatDate(a.date)}   ·   ${a.views}x dibaca',
             style: const TextStyle(fontSize: 11, letterSpacing: .4, color: AppTheme.ink500)),
         const SizedBox(height: 12),
         _ShareRow(uri: a.uri, title: a.title),
         const Divider(height: 28),
         if (a.image != null) ...[MagazineImage(path: a.image, aspectRatio: 16 / 9), const SizedBox(height: 16)],
         HtmlWidget(
-          a.content ?? '',
+          sanitizeCmsHtml(a.content),
           textStyle: const TextStyle(fontSize: 16.5, height: 1.7, color: AppTheme.ink),
           onTapUrl: (url) {
             launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
@@ -166,7 +180,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
                     Text(c.name, style: const TextStyle(fontWeight: FontWeight.w700)),
                     Text(formatDate(c.date), style: const TextStyle(fontSize: 10.5, color: AppTheme.ink500)),
                     const SizedBox(height: 6),
-                    HtmlWidget(c.fill, textStyle: const TextStyle(fontSize: 14.5, height: 1.5, color: AppTheme.ink)),
+                    HtmlWidget(sanitizeCmsHtml(c.fill), textStyle: const TextStyle(fontSize: 14.5, height: 1.5, color: AppTheme.ink)),
                     if (c.reply != null && c.reply!.isNotEmpty)
                       Container(
                         margin: const EdgeInsets.only(top: 8, left: 12),
@@ -175,7 +189,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           const Text('Jawaban:', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
                           const SizedBox(height: 2),
-                          HtmlWidget(c.reply!, textStyle: const TextStyle(fontSize: 14, height: 1.5, color: AppTheme.ink600)),
+                          HtmlWidget(sanitizeCmsHtml(c.reply), textStyle: const TextStyle(fontSize: 14, height: 1.5, color: AppTheme.ink600)),
                         ]),
                       ),
                   ],

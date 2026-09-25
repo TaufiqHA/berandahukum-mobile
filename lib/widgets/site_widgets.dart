@@ -82,19 +82,26 @@ class HashDivider extends StatelessWidget {
 }
 
 /// Kartu kategori accordion: header bergaris merah + baris sub-kategori.
-/// Klik baris sub-kategori memunculkan dropdown berisi artikelnya.
+/// Klik header kategori membuka/menutup daftar sub-kategorinya, lalu klik
+/// baris sub-kategori memunculkan dropdown berisi artikelnya.
 class CategoryAccordion extends StatefulWidget {
   final List<Category> categories;
-  final void Function(Category category) onCategory;
   final void Function(Article article) onArticle;
   final EdgeInsets padding;
+
+  /// Iklan yang disisipkan di antara kartu kategori (bergilir).
+  final List<AdBanner> ads;
+
+  /// Membuka tautan iklan artikel internal di dalam aplikasi.
+  final void Function(String uri)? onAdArticle;
 
   const CategoryAccordion({
     super.key,
     required this.categories,
-    required this.onCategory,
     required this.onArticle,
     this.padding = const EdgeInsets.symmetric(horizontal: 12),
+    this.ads = const [],
+    this.onAdArticle,
   });
 
   @override
@@ -102,6 +109,8 @@ class CategoryAccordion extends StatefulWidget {
 }
 
 class _CategoryAccordionState extends State<CategoryAccordion> {
+  /// Kategori yang sedang dibuka (menampilkan daftar sub-kategori).
+  final _openCategories = <String>{};
   final _open = <String>{};
   final _loading = <String>{};
   final _articles = <String, List<Article>>{};
@@ -135,19 +144,54 @@ class _CategoryAccordionState extends State<CategoryAccordion> {
   @override
   Widget build(BuildContext context) {
     if (widget.categories.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: widget.padding,
-      child: Column(children: [for (final c in widget.categories) _card(context, c)]),
-    );
+
+    // Iklan tanpa kategori dipakai bergilir untuk mengisi celah yang belum
+    // punya iklan khusus.
+    final generic = widget.ads.where((a) => a.categoryId == null).toList();
+    var genericIndex = 0;
+
+    final children = <Widget>[];
+    for (var i = 0; i < widget.categories.length; i++) {
+      final c = widget.categories[i];
+      final isLast = i == widget.categories.length - 1;
+      children.add(_card(context, c));
+
+      // Iklan khusus kategori ini selalu tampil setelahnya; jika tidak ada,
+      // isi celah (kecuali setelah kategori terakhir) dengan iklan bergilir.
+      final specific = _adForCategory(c.id);
+      if (specific != null) {
+        children.add(_ad(specific));
+      } else if (!isLast && generic.isNotEmpty) {
+        children.add(_ad(generic[genericIndex++ % generic.length]));
+      }
+    }
+
+    return Padding(padding: widget.padding, child: Column(children: children));
   }
 
+  AdBanner? _adForCategory(int categoryId) {
+    for (final a in widget.ads) {
+      if (a.categoryId == categoryId) return a;
+    }
+    return null;
+  }
+
+  Widget _ad(AdBanner ad) => AdBannerView(
+        ad: ad,
+        padding: const EdgeInsets.only(bottom: 16),
+        onArticle: widget.onAdArticle,
+      );
+
   Widget _card(BuildContext context, Category c) {
+    final canExpand = c.subs.isNotEmpty;
+    final isOpen = _openCategories.contains(c.uri);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppTheme.line)),
+      decoration: BoxDecoration(color: AppTheme.ash, border: Border.all(color: AppTheme.line)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         InkWell(
-          onTap: () => widget.onCategory(c),
+          onTap: canExpand ? () => _toggleCategory(c.uri) : null,
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
@@ -156,16 +200,37 @@ class _CategoryAccordionState extends State<CategoryAccordion> {
                 bottom: BorderSide(color: AppTheme.line),
               ),
             ),
-            child: Text(c.name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: AppTheme.ink)),
+            child: Row(children: [
+              Expanded(
+                child: Text(c.name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: isOpen ? AppTheme.brand : AppTheme.ink,
+                    )),
+              ),
+              if (canExpand)
+                AnimatedRotation(
+                  turns: isOpen ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 200),
+                  child: Icon(Icons.arrow_drop_down, color: isOpen ? AppTheme.brand : AppTheme.ink500),
+                ),
+            ]),
           ),
         ),
-        if (c.subs.isNotEmpty)
+        if (canExpand && isOpen)
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(children: [for (final s in c.subs) _sub(context, s)]),
           ),
       ]),
     );
+  }
+
+  void _toggleCategory(String uri) {
+    setState(() {
+      if (!_openCategories.remove(uri)) _openCategories.add(uri);
+    });
   }
 
   Widget _sub(BuildContext context, Category s) {

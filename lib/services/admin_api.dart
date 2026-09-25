@@ -236,4 +236,23 @@ class AdminApi {
   static Future<void> deleteSlider(int id) => _delete('slider/$id').then((_) {});
 
   static Future<void> saveSliderOrder(List<int> ids) => _post('slider/urutan', {'position': ids}).then((_) {});
+
+  // ---- Iklan antar-kategori (admin) ----
+
+  static Future<Map<String, dynamic>> ads() => _get('ads');
+
+  static Future<void> saveAd({int? id, required String link, int position = 100, int? categoryId, String? imagePath}) {
+    final fields = <String, String>{
+      'link': link,
+      'position': '$position',
+      'category_id': '${categoryId ?? ''}',
+    };
+    final path = id == null ? 'ads' : 'ads/$id';
+    if (imagePath != null) {
+      return _multipart(path, fields, 'image', imagePath).then((_) {});
+    }
+    return _post(path, fields).then((_) {});
+  }
+
+  static Future<void> deleteAd(int id) => _delete('ads/$id').then((_) {});
 }

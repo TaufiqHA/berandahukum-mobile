@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme.dart';
 import '../../state/admin_auth.dart';
+import 'admin_ads_screen.dart';
 import 'admin_article_list_screen.dart';
 import 'admin_comment_screen.dart';
 import 'admin_dashboard_screen.dart';
@@ -35,6 +36,7 @@ class _AdminShellState extends State<AdminShell> {
     _Destination('Dashboard', Icons.dashboard_outlined, _dashboard),
     _Destination('Artikel', Icons.article_outlined, _articles),
     _Destination('Slider', Icons.view_carousel_outlined, _slider, adminOnly: true),
+    _Destination('Iklan', Icons.campaign_outlined, _ads, adminOnly: true),
     _Destination('Tata Letak', Icons.dashboard_customize_outlined, _layout, adminOnly: true),
     _Destination('Komentar', Icons.mode_comment_outlined, _comments, adminOnly: true),
     _Destination('Pertanyaan', Icons.help_outline, _questions, adminOnly: true),
@@ -119,6 +121,7 @@ class _AdminShellState extends State<AdminShell> {
   static Widget _dashboard() => const AdminDashboardScreen();
   static Widget _articles() => const AdminArticleListScreen();
   static Widget _slider() => const AdminSliderScreen();
+  static Widget _ads() => const AdminAdsScreen();
   static Widget _layout() => const AdminLayoutScreen();
   static Widget _comments() => const AdminCommentScreen();
   static Widget _questions() => const AdminQuestionScreen();

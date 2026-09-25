@@ -2,6 +2,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart' show FlutterQuillLocalizations;
+import 'package:image_picker_android/image_picker_android.dart';
+import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:provider/provider.dart';
 
 import 'core/theme.dart';
@@ -14,6 +16,14 @@ import 'state/bookmarks.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Paksa Android Photo Picker untuk memilih gambar. Pemilih berkas legacy
+  // (ACTION_GET_CONTENT/DocumentsUI) bisa membuat proses crash di sebagian
+  // environment (mis. Waydroid) karena bug MediaProvider/AppOps bawaan OS.
+  final pickerPlatform = ImagePickerPlatform.instance;
+  if (pickerPlatform is ImagePickerAndroid) {
+    pickerPlatform.useAndroidPhotoPicker = true;
+  }
 
   // Tampilkan pesan kesalahan alih-alih layar putih bila ada error render.
   ErrorWidget.builder = (details) => Container(

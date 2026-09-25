@@ -30,4 +30,30 @@ void main() {
     final size = tester.getSize(find.byType(MagazineImage));
     expect(size.width, 400);
   });
+
+  testWidgets('caption slider tidak overflow untuk judul & penulis panjang', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: HeroSlider(
+          items: [
+            Article(
+              id: 1,
+              uri: 'x',
+              title: 'Perbedaan Hukum Pidana dan Hukum Perdata (Dari Sudut Hukum Bisnis)',
+              author: 'Estimid FD Simatupang SH MH',
+              image: null,
+            ),
+          ],
+          onTap: (_) {},
+        ),
+      ),
+    ));
+
+    expect(tester.takeException(), isNull);
+  });
 }

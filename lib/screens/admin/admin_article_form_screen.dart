@@ -99,12 +99,16 @@ class _AdminArticleFormScreenState extends State<AdminArticleFormScreen> {
   }
 
   Future<void> _pickImage() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1600, imageQuality: 85);
-    if (picked != null) {
-      setState(() {
-        _pickedImage = picked.path;
-        _removeImage = false;
-      });
+    try {
+      final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1600, imageQuality: 85);
+      if (picked != null && mounted) {
+        setState(() {
+          _pickedImage = picked.path;
+          _removeImage = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) adminSnack(context, 'Gagal memilih gambar: $e', error: true);
     }
   }
 

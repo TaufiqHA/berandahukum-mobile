@@ -42,6 +42,9 @@ dependencies:
   intl: ^0.20.3
   flutter_widget_from_html_core: ^0.17.4
   image_picker: ^1.2.3
+  # Dipakai langsung untuk memaksa Android Photo Picker (lihat main.dart).
+  image_picker_android: ^0.8.13
+  image_picker_platform_interface: ^2.11.0
   flutter_quill: ^11.6.0
   flutter_quill_delta_from_html: ^1.5.3
   vsc_quill_delta_to_html: ^1.0.5
@@ -99,3 +102,10 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Patch lokal `image_picker_android`: menangkap exception dari
+# ContentResolver#openInputStream() (mis. di Waydroid) agar aplikasi tidak
+# force close saat memilih gambar. Lihat packages/image_picker_android.
+dependency_overrides:
+  image_picker_android:
+    path: packages/image_picker_android

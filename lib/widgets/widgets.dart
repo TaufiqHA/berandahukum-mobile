@@ -90,25 +90,17 @@ class StoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final kicker = a.labelName;
     if (compact) {
+      // Judul + tanggal publish, tanpa thumbnail (dipakai untuk "Artikel Terkait").
       return InkWell(
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(width: 104, child: MagazineImage(path: a.image, aspectRatio: 1)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(a.title, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'serif', fontSize: 15, fontWeight: FontWeight.w700, height: 1.2, color: AppTheme.ink)),
-                    const SizedBox(height: 6),
-                    Text(_date(a.date), style: const TextStyle(fontSize: 10.5, letterSpacing: .5, color: AppTheme.ink500)),
-                  ],
-                ),
-              ),
+              Text(a.title, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'serif', fontSize: 15, fontWeight: FontWeight.w700, height: 1.2, color: AppTheme.ink)),
+              const SizedBox(height: 6),
+              Text(_date(a.date), style: const TextStyle(fontSize: 10.5, letterSpacing: .5, color: AppTheme.ink500)),
             ],
           ),
         ),

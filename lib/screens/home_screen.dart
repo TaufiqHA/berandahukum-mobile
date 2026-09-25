@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../models/models.dart';
 import '../services/api.dart';
+import '../state/app_events.dart';
 import '../widgets/hero_slider.dart';
 import '../widgets/site_widgets.dart';
 import 'admin/admin_gate.dart';
 import 'article_screen.dart';
-import 'category_screen.dart';
 import 'info_screen.dart';
 
 void openArticle(BuildContext context, Article a) {
@@ -28,10 +28,22 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _future = Api.home();
+    // Muat ulang saat iklan (atau data lain) diubah dari panel admin.
+    homeReloadSignal.addListener(_onExternalReload);
+  }
+
+  @override
+  void dispose() {
+    homeReloadSignal.removeListener(_onExternalReload);
+    super.dispose();
+  }
+
+  void _onExternalReload() {
+    if (mounted) setState(() { _future = Api.home(); });
   }
 
   Future<void> _refresh() async {
-    setState(() => _future = Api.home());
+    setState(() { _future = Api.home(); });
     await _future;
   }
 
@@ -97,33 +109,45 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 14),
                 ],
 
-                // Carousel sorotan (judul + penulis)
-                HeroSlider(items: data.slider, onTap: (a) => openArticle(context, a)),
-
-                // Pembatas #
-                const HashDivider(),
-
-                // Banner setelah pembatas # (mis. "Setidak-tidaknya ada …")
-                if (data.adsMiddle != null) ...[
-                  AdBannerView(ad: data.adsMiddle!, onArticle: _openAdArticle),
+                // Banner iklan atas beranda (maks 2, dari panel admin)
+                for (final b in data.adsAtas) ...[
                   const SizedBox(height: 14),
+                  AdBannerView(ad: b, onArticle: _openAdArticle),
                 ],
+
+                // Carousel sorotan: artikel headline (fallback ke slider bila kosong)
+                HeroSlider(
+                  items: data.headline.isNotEmpty ? data.headline : data.slider,
+                  onTap: (a) => openArticle(context, a),
+                ),
 
                 // Tile banner (mis. PENGANTAR ILMU HUKUM, dst.)
                 for (final b in data.banners) ...[
-                  AdBannerView(ad: b, onArticle: _openAdArticle),
                   const SizedBox(height: 12),
+                  AdBannerView(ad: b, onArticle: _openAdArticle),
                 ],
 
-                const SizedBox(height: 4),
+                const SizedBox(height: 16),
 
-                // Kartu kategori accordion
+                // Kartu kategori accordion (dengan iklan antar-kategori)
                 CategoryAccordion(
                   categories: data.categories,
-                  onCategory: (c) => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => CategoryDetailScreen(name: c.name, uri: c.uri))),
                   onArticle: (a) => openArticle(context, a),
+                  ads: data.adsKategori,
+                  onAdArticle: _openAdArticle,
                 ),
+
+                // Banner di bawah kategori (mis. ajakan kirim tulisan)
+                if (data.adsMiddle != null) ...[
+                  const SizedBox(height: 14),
+                  AdBannerView(ad: data.adsMiddle!, onArticle: _openAdArticle),
+                ],
+
+                // Banner iklan bawah beranda (maks 3, dari panel admin)
+                for (final b in data.adsBawah) ...[
+                  const SizedBox(height: 14),
+                  AdBannerView(ad: b, onArticle: _openAdArticle),
+                ],
 
                 // Iklan sebelum footer
                 if (data.adsBottom != null) ...[

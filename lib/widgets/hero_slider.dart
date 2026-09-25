@@ -57,7 +57,8 @@ class _HeroSliderState extends State<HeroSlider> {
 
     final width = MediaQuery.of(context).size.width;
     final imageHeight = width * 9 / 16;
-    const captionHeight = 96.0;
+    // Cukup untuk judul maks. 2 baris + 1 baris penulis, dengan sedikit kelonggaran.
+    const captionHeight = 104.0;
 
     return SizedBox(
       height: imageHeight + captionHeight,
@@ -87,11 +88,13 @@ class _HeroSliderState extends State<HeroSlider> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            a.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontFamily: 'serif', fontSize: 20, fontWeight: FontWeight.w700, height: 1.15, color: Colors.white),
+                          Flexible(
+                            child: Text(
+                              a.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontFamily: 'serif', fontSize: 20, fontWeight: FontWeight.w700, height: 1.15, color: Colors.white),
+                            ),
                           ),
                           const SizedBox(height: 8),
                           if (a.author.isNotEmpty)

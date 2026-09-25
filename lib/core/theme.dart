@@ -10,6 +10,9 @@ class AppTheme {
   static const Color line = Color(0xFFDCDBD6);
   static const Color tint = Color(0xFFF5F5F3);
 
+  /// Abu rokok cerah — latar kartu kategori.
+  static const Color ash = Color(0xFFE8E8E4);
+
   static ThemeData light() {
     final base = ThemeData.light(useMaterial3: true);
     return base.copyWith(

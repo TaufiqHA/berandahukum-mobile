@@ -5,7 +5,7 @@ class AppConfig {
   /// Host Laravel. Default 10.0.2.2 = localhost host dari Android emulator.
   static const String host = String.fromEnvironment(
     'API_BASE',
-    defaultValue: 'https://taufiqha.online',
+    defaultValue: 'http://10.204.165.207:8000',
   );
 
   static String get apiRoot => '$host/api/v1';

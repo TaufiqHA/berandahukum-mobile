@@ -21,7 +21,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   }
 
   Future<void> _reload() async {
-    setState(() => _future = AdminApi.settings());
+    setState(() { _future = AdminApi.settings(); });
     await _future;
   }
 
