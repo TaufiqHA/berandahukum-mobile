@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/config.dart';
@@ -81,26 +82,62 @@ class HashDivider extends StatelessWidget {
 }
 
 /// Kartu kategori accordion: header bergaris merah + baris sub-kategori.
-class CategoryAccordion extends StatelessWidget {
+/// Klik baris sub-kategori memunculkan dropdown berisi artikelnya.
+class CategoryAccordion extends StatefulWidget {
   final List<Category> categories;
   final void Function(Category category) onCategory;
-  final void Function(Category category, Category sub) onSub;
+  final void Function(Article article) onArticle;
   final EdgeInsets padding;
 
   const CategoryAccordion({
     super.key,
     required this.categories,
     required this.onCategory,
-    required this.onSub,
+    required this.onArticle,
     this.padding = const EdgeInsets.symmetric(horizontal: 12),
   });
 
   @override
+  State<CategoryAccordion> createState() => _CategoryAccordionState();
+}
+
+class _CategoryAccordionState extends State<CategoryAccordion> {
+  final _open = <String>{};
+  final _loading = <String>{};
+  final _articles = <String, List<Article>>{};
+
+  Future<void> _toggle(Category sub) async {
+    final isOpen = _open.contains(sub.uri);
+    setState(() {
+      if (isOpen) {
+        _open.remove(sub.uri);
+      } else {
+        _open
+          ..clear()
+          ..add(sub.uri);
+      }
+    });
+    if (isOpen || _articles.containsKey(sub.uri) || _loading.contains(sub.uri)) return;
+
+    setState(() => _loading.add(sub.uri));
+    try {
+      final p = await Api.taxonomyArticles('subcategories', sub.uri, 1);
+      if (!mounted) return;
+      setState(() => _articles[sub.uri] = p.data);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _articles[sub.uri] = const []);
+    } finally {
+      if (mounted) setState(() => _loading.remove(sub.uri));
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (categories.isEmpty) return const SizedBox.shrink();
+    if (widget.categories.isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: padding,
-      child: Column(children: [for (final c in categories) _card(context, c)]),
+      padding: widget.padding,
+      child: Column(children: [for (final c in widget.categories) _card(context, c)]),
     );
   }
 
@@ -110,7 +147,7 @@ class CategoryAccordion extends StatelessWidget {
       decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AppTheme.line)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         InkWell(
-          onTap: () => onCategory(c),
+          onTap: () => widget.onCategory(c),
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
@@ -125,24 +162,71 @@ class CategoryAccordion extends StatelessWidget {
         if (c.subs.isNotEmpty)
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                for (final s in c.subs)
-                  InkWell(
-                    onTap: () => onSub(c, s),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      margin: const EdgeInsets.only(bottom: 12),
-                      decoration: BoxDecoration(border: Border.all(color: AppTheme.line)),
-                      child: Text(s.name, style: const TextStyle(fontSize: 14, color: AppTheme.ink600)),
-                    ),
-                  ),
-              ],
-            ),
+            child: Column(children: [for (final s in c.subs) _sub(context, s)]),
           ),
       ]),
     );
+  }
+
+  Widget _sub(BuildContext context, Category s) {
+    final isOpen = _open.contains(s.uri);
+    final articles = _articles[s.uri];
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      InkWell(
+        onTap: () => _toggle(s),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: isOpen ? AppTheme.brand : AppTheme.line),
+          ),
+          child: Row(children: [
+            Expanded(
+              child: Text(s.name,
+                  style: TextStyle(fontSize: 14, color: isOpen ? AppTheme.brand : AppTheme.ink600)),
+            ),
+            AnimatedRotation(
+              turns: isOpen ? 0.5 : 0,
+              duration: const Duration(milliseconds: 200),
+              child: const Icon(Icons.arrow_drop_down, color: AppTheme.ink500),
+            ),
+          ]),
+        ),
+      ),
+      if (isOpen)
+        Container(
+          decoration: const BoxDecoration(
+            color: AppTheme.tint,
+            border: Border(
+              left: BorderSide(color: AppTheme.line),
+              right: BorderSide(color: AppTheme.line),
+              bottom: BorderSide(color: AppTheme.line),
+            ),
+          ),
+          child: _loading.contains(s.uri)
+              ? const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Text('Memuat…', style: TextStyle(fontSize: 13, color: AppTheme.ink500)),
+                )
+              : (articles == null || articles.isEmpty)
+                  ? const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Text('Belum ada artikel.', style: TextStyle(fontSize: 13, color: AppTheme.ink500)),
+                    )
+                  : Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                      for (final a in articles)
+                        InkWell(
+                          onTap: () => widget.onArticle(a),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            child: Text(a.title, style: const TextStyle(fontSize: 13.5, color: AppTheme.ink600)),
+                          ),
+                        ),
+                    ]),
+        ),
+      const SizedBox(height: 12),
+    ]);
   }
 }
 
@@ -186,57 +270,65 @@ class _SiteFooterState extends State<SiteFooter> {
         Text('copyright © 2014 - ${DateTime.now().year} berandahukum.com',
             textAlign: TextAlign.center, style: const TextStyle(fontSize: 12.5, color: AppTheme.ink600)),
         const SizedBox(height: 22),
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Informasi', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppTheme.ink)),
-              const SizedBox(height: 10),
-              for (final i in _info)
-                InkWell(
-                  onTap: () => widget.onInfo('${i['id']}', i['name'] as String? ?? ''),
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Text(i['name'] as String? ?? '', style: const TextStyle(fontSize: 14, color: AppTheme.ink600)),
-                  ),
-                ),
-            ]),
-          ),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Ikuti Kami', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppTheme.ink)),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  for (final s in _sosial)
-                    InkWell(
-                      onTap: () => launchUrl(Uri.parse(s['url'] as String), mode: LaunchMode.externalApplication),
-                      child: Container(
-                        width: 42,
-                        height: 42,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(border: Border.all(color: AppTheme.line), color: Colors.white),
-                        child: Text(_label(s['name'] as String? ?? ''),
-                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: AppTheme.ink600)),
-                      ),
-                    ),
-                ],
-              ),
-            ]),
-          ),
-        ]),
+
+        // Informasi — 2 kolom, teks di tengah
+        const Text('Informasi', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppTheme.ink)),
+        const SizedBox(height: 6),
+        for (var i = 0; i < _info.length; i += 2)
+          Row(children: [
+            Expanded(child: _infoLink(_info[i])),
+            Expanded(child: i + 1 < _info.length ? _infoLink(_info[i + 1]) : const SizedBox()),
+          ]),
+
+        const SizedBox(height: 28),
+
+        // Ikuti Kami — ikon rapat, di tengah, ada jarak bawah
+        const Text('Ikuti Kami', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppTheme.ink)),
+        const SizedBox(height: 12),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final s in _sosial)
+              _socialBox(_socialIcon(s['name'] as String? ?? ''), s['url'] as String),
+            _socialBox(FontAwesomeIcons.rss, '${AppConfig.host}/rss'),
+          ],
+        ),
+        const SizedBox(height: 28),
       ]),
     );
   }
 
-  String _label(String name) {
+  Widget _infoLink(Map<String, dynamic> i) => InkWell(
+        onTap: () => widget.onInfo('${i['id']}', i['name'] as String? ?? ''),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Center(
+            child: Text(i['name'] as String? ?? '',
+                textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, color: AppTheme.ink600)),
+          ),
+        ),
+      );
+
+  Widget _socialBox(FaIconData icon, String url) => InkWell(
+        onTap: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+        child: Container(
+          width: 38,
+          height: 38,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(border: Border.all(color: AppTheme.line), color: Colors.white),
+          child: FaIcon(icon, size: 16, color: AppTheme.ink600),
+        ),
+      );
+
+  FaIconData _socialIcon(String name) {
     final n = name.toLowerCase();
-    if (n.contains('face')) return 'f';
-    if (n.contains('insta')) return 'ig';
-    if (n.contains('twit')) return 'x';
-    if (n.contains('you')) return 'yt';
-    if (n.contains('rss')) return 'rss';
-    return name.isEmpty ? '?' : name.substring(0, 1).toUpperCase();
+    if (n.contains('face')) return FontAwesomeIcons.facebookF;
+    if (n.contains('insta')) return FontAwesomeIcons.instagram;
+    if (n.contains('twit')) return FontAwesomeIcons.twitter;
+    if (n.contains('you')) return FontAwesomeIcons.youtube;
+    if (n.contains('rss')) return FontAwesomeIcons.rss;
+    return FontAwesomeIcons.link;
   }
 }

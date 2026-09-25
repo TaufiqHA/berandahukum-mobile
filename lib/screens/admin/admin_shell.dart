@@ -6,6 +6,7 @@ import '../../state/admin_auth.dart';
 import 'admin_article_list_screen.dart';
 import 'admin_comment_screen.dart';
 import 'admin_dashboard_screen.dart';
+import 'admin_layout_screen.dart';
 import 'admin_question_screen.dart';
 import 'admin_settings_screen.dart';
 import 'admin_slider_screen.dart';
@@ -34,6 +35,7 @@ class _AdminShellState extends State<AdminShell> {
     _Destination('Dashboard', Icons.dashboard_outlined, _dashboard),
     _Destination('Artikel', Icons.article_outlined, _articles),
     _Destination('Slider', Icons.view_carousel_outlined, _slider, adminOnly: true),
+    _Destination('Tata Letak', Icons.dashboard_customize_outlined, _layout, adminOnly: true),
     _Destination('Komentar', Icons.mode_comment_outlined, _comments, adminOnly: true),
     _Destination('Pertanyaan', Icons.help_outline, _questions, adminOnly: true),
     _Destination('Label', Icons.label_outline, _labels, adminOnly: true),
@@ -117,6 +119,7 @@ class _AdminShellState extends State<AdminShell> {
   static Widget _dashboard() => const AdminDashboardScreen();
   static Widget _articles() => const AdminArticleListScreen();
   static Widget _slider() => const AdminSliderScreen();
+  static Widget _layout() => const AdminLayoutScreen();
   static Widget _comments() => const AdminCommentScreen();
   static Widget _questions() => const AdminQuestionScreen();
   static Widget _labels() => const AdminTaxonomyScreen(kind: TaxonomyKind.label);

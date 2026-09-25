@@ -47,6 +47,7 @@ dependencies:
   vsc_quill_delta_to_html: ^1.0.5
   flutter_localizations:
     sdk: flutter
+  font_awesome_flutter: ^11.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

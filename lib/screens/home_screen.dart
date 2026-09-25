@@ -122,8 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   categories: data.categories,
                   onCategory: (c) => Navigator.push(context,
                       MaterialPageRoute(builder: (_) => CategoryDetailScreen(name: c.name, uri: c.uri))),
-                  onSub: (c, s) => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => CategoryDetailScreen(name: s.name, uri: s.uri, kind: 'subcategories'))),
+                  onArticle: (a) => openArticle(context, a),
                 ),
 
                 // Iklan sebelum footer

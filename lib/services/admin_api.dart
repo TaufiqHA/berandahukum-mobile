@@ -211,6 +211,13 @@ class AdminApi {
   static Future<void> saveSysSettings({required bool showPertanyaan, required bool showYoutube}) =>
       _post('settings/sys', {'show_pertanyaan': showPertanyaan, 'show_youtube': showYoutube}).then((_) {});
 
+  // ---- Tata letak beranda (admin) ----
+
+  static Future<Map<String, dynamic>> layout() => _get('layout');
+
+  static Future<void> saveLayout(List<Map<String, dynamic>> items) =>
+      _post('layout', {'items': items}).then((_) {});
+
   // ---- Slider / sorotan beranda (admin) ----
 
   static Future<Map<String, dynamic>> slider() => _get('slider');

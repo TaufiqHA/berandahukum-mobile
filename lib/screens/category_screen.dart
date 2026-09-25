@@ -3,67 +3,8 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../models/models.dart';
 import '../services/api.dart';
-import '../widgets/site_widgets.dart';
 import '../widgets/widgets.dart';
 import 'home_screen.dart' show openArticle;
-
-/// Daftar seluruh kategori (dengan sub-kategori) — kartu accordion seperti
-/// halaman kategori pada situs mobile.
-class CategoryListScreen extends StatefulWidget {
-  const CategoryListScreen({super.key});
-  @override
-  State<CategoryListScreen> createState() => _CategoryListScreenState();
-}
-
-class _CategoryListScreenState extends State<CategoryListScreen> {
-  late Future<List<Category>> _future;
-
-  @override
-  void initState() {
-    super.initState();
-    _future = Api.categories();
-  }
-
-  Future<void> _refresh() async {
-    setState(() => _future = Api.categories());
-    await _future;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Kategori', style: TextStyle(fontFamily: 'serif'))),
-      body: FutureBuilder<List<Category>>(
-        future: _future,
-        builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppTheme.brand));
-          }
-          if (snap.hasError) return Center(child: Text(snap.error.toString()));
-          final cats = snap.data!.where((c) => c.subs.isNotEmpty).toList();
-          return RefreshIndicator(
-            color: AppTheme.brand,
-            onRefresh: _refresh,
-            child: ListView(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              children: [
-                CategoryAccordion(
-                  categories: cats,
-                  onCategory: (c) => _open(context, c.name, c.uri, 'categories'),
-                  onSub: (c, s) => _open(context, s.name, s.uri, 'subcategories'),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  void _open(BuildContext context, String name, String uri, String kind) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => CategoryDetailScreen(name: name, uri: uri, kind: kind)));
-  }
-}
 
 /// Daftar artikel untuk sebuah kategori/sub-kategori/label (dengan paginasi).
 class CategoryDetailScreen extends StatefulWidget {
