@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/config.dart';
-import '../core/html_utils.dart';
 import '../core/theme.dart';
 import '../models/models.dart';
 import '../services/api.dart';
 import '../state/bookmarks.dart';
+import '../widgets/cms_html.dart';
 import '../widgets/site_widgets.dart';
 import '../widgets/widgets.dart';
 
@@ -101,6 +100,10 @@ class _ArticleScreenState extends State<ArticleScreen> {
     );
   }
 
+  void _openArticle(String uri) {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => ArticleScreen(uri: uri)));
+  }
+
   Widget _buildArticle(Article a) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
@@ -110,8 +113,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
           AdBannerView(
             ad: b,
             padding: const EdgeInsets.only(bottom: 12),
-            onArticle: (uri) => Navigator.push(
-                context, MaterialPageRoute(builder: (_) => ArticleScreen(uri: uri))),
+            onArticle: _openArticle,
           ),
         ],
         if (a.labelName != null)
@@ -128,13 +130,10 @@ class _ArticleScreenState extends State<ArticleScreen> {
         _ShareRow(uri: a.uri, title: a.title),
         const Divider(height: 28),
         if (a.image != null) ...[MagazineImage(path: a.image, aspectRatio: 16 / 9), const SizedBox(height: 16)],
-        HtmlWidget(
-          sanitizeCmsHtml(a.content),
+        CmsHtml(
+          a.content ?? '',
           textStyle: const TextStyle(fontSize: 16.5, height: 1.7, color: AppTheme.ink),
-          onTapUrl: (url) {
-            launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-            return true;
-          },
+          onArticle: _openArticle,
         ),
         if (a.pdf != null && a.pdf!.isNotEmpty) ...[
           const SizedBox(height: 16),
@@ -180,7 +179,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
                     Text(c.name, style: const TextStyle(fontWeight: FontWeight.w700)),
                     Text(formatDate(c.date), style: const TextStyle(fontSize: 10.5, color: AppTheme.ink500)),
                     const SizedBox(height: 6),
-                    HtmlWidget(sanitizeCmsHtml(c.fill), textStyle: const TextStyle(fontSize: 14.5, height: 1.5, color: AppTheme.ink)),
+                    CmsHtml(c.fill, textStyle: const TextStyle(fontSize: 14.5, height: 1.5, color: AppTheme.ink), onArticle: _openArticle),
                     if (c.reply != null && c.reply!.isNotEmpty)
                       Container(
                         margin: const EdgeInsets.only(top: 8, left: 12),
@@ -189,7 +188,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           const Text('Jawaban:', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
                           const SizedBox(height: 2),
-                          HtmlWidget(sanitizeCmsHtml(c.reply), textStyle: const TextStyle(fontSize: 14, height: 1.5, color: AppTheme.ink600)),
+                          CmsHtml(c.reply!, textStyle: const TextStyle(fontSize: 14, height: 1.5, color: AppTheme.ink600), onArticle: _openArticle),
                         ]),
                       ),
                   ],

@@ -26,4 +26,27 @@ void main() {
     expect(sanitizeCmsHtml(null), '');
     expect(sanitizeCmsHtml(''), '');
   });
+
+  group('internalArticleUri', () {
+    const base = 'https://taufiqha.online';
+
+    test('resolves relative links from TinyMCE', () {
+      expect(internalArticleUri('../../../a/judul-artikel', baseUrl: base), 'judul-artikel');
+      expect(internalArticleUri('/a/judul-artikel', baseUrl: base), 'judul-artikel');
+      expect(internalArticleUri('a/judul-artikel', baseUrl: base), 'judul-artikel');
+      expect(internalArticleUri('/article/judul-artikel', baseUrl: base), 'judul-artikel');
+    });
+
+    test('accepts absolute links on the same host', () {
+      expect(internalArticleUri('$base/a/judul-artikel', baseUrl: base), 'judul-artikel');
+    });
+
+    test('rejects anchors, external links and other paths', () {
+      expect(internalArticleUri('#bagian', baseUrl: base), isNull);
+      expect(internalArticleUri('https://other.com/a/judul', baseUrl: base), isNull);
+      expect(internalArticleUri('https://other.com/berita', baseUrl: base), isNull);
+      expect(internalArticleUri('/kategori/hukum', baseUrl: base), isNull);
+      expect(internalArticleUri('', baseUrl: base), isNull);
+    });
+  });
 }

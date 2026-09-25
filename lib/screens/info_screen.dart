@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../core/html_utils.dart';
 import '../core/theme.dart';
 import '../models/models.dart';
 import '../services/api.dart';
+import '../widgets/cms_html.dart';
+import 'article_screen.dart';
 
 class InfoListScreen extends StatefulWidget {
   const InfoListScreen({super.key});
@@ -97,13 +97,11 @@ class _InfoDetailScreenState extends State<InfoDetailScreen> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
             children: [
-              HtmlWidget(
-                sanitizeCmsHtml(snap.data!.content),
+              CmsHtml(
+                snap.data!.content,
                 textStyle: const TextStyle(fontSize: 16, height: 1.7),
-                onTapUrl: (url) {
-                  launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-                  return true;
-                },
+                onArticle: (uri) => Navigator.push(
+                    context, MaterialPageRoute(builder: (_) => ArticleScreen(uri: uri))),
               ),
             ],
           );

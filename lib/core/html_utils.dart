@@ -31,3 +31,39 @@ String sanitizeCmsHtml(String? html) {
       .replaceAll(_heightInStyle, '')
       .replaceAll(_heightAttribute, '');
 }
+
+/// Mengambil URI artikel internal dari sebuah tautan di dalam konten CMS.
+///
+/// Tautan ke artikel lain bisa disimpan TinyMCE sebagai URL relatif
+/// (mis. `../../../a/judul-artikel`) atau absolut ke host situs. Fungsi ini
+/// menyelesaikan tautan relatif terhadap [baseUrl] lalu memeriksa apakah
+/// path-nya berbentuk `/a/<uri>` atau `/article/<uri>`.
+///
+/// Mengembalikan `null` bila tautan bukan artikel internal: anchor (`#...`),
+/// tautan eksternal, atau URL yang tidak bisa diurai.
+String? internalArticleUri(String url, {String baseUrl = ''}) {
+  final trimmed = url.trim();
+  if (trimmed.isEmpty || trimmed.startsWith('#')) return null;
+
+  var uri = Uri.tryParse(trimmed);
+  if (uri == null) return null;
+
+  final base = baseUrl.isEmpty ? null : Uri.tryParse(baseUrl);
+  final baseHost = base?.host ?? '';
+
+  if (!uri.hasScheme) {
+    if (base == null) return null;
+    uri = base.resolveUri(uri);
+  }
+
+  // Tautan absolut hanya dianggap internal bila host-nya sama dengan situs.
+  if (uri.host.isNotEmpty && (baseHost.isEmpty || uri.host != baseHost)) {
+    return null;
+  }
+
+  final segments = uri.pathSegments;
+  if (segments.length >= 2 && (segments[0] == 'a' || segments[0] == 'article')) {
+    return segments[1];
+  }
+  return null;
+}
