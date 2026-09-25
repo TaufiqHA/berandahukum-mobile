@@ -8,6 +8,7 @@ import 'admin_comment_screen.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_question_screen.dart';
 import 'admin_settings_screen.dart';
+import 'admin_slider_screen.dart';
 import 'admin_taxonomy_screen.dart';
 import 'admin_ui.dart';
 import 'admin_user_screen.dart';
@@ -32,6 +33,7 @@ class _AdminShellState extends State<AdminShell> {
   static const _all = <_Destination>[
     _Destination('Dashboard', Icons.dashboard_outlined, _dashboard),
     _Destination('Artikel', Icons.article_outlined, _articles),
+    _Destination('Slider', Icons.view_carousel_outlined, _slider, adminOnly: true),
     _Destination('Komentar', Icons.mode_comment_outlined, _comments, adminOnly: true),
     _Destination('Pertanyaan', Icons.help_outline, _questions, adminOnly: true),
     _Destination('Label', Icons.label_outline, _labels, adminOnly: true),
@@ -114,6 +116,7 @@ class _AdminShellState extends State<AdminShell> {
 
   static Widget _dashboard() => const AdminDashboardScreen();
   static Widget _articles() => const AdminArticleListScreen();
+  static Widget _slider() => const AdminSliderScreen();
   static Widget _comments() => const AdminCommentScreen();
   static Widget _questions() => const AdminQuestionScreen();
   static Widget _labels() => const AdminTaxonomyScreen(kind: TaxonomyKind.label);

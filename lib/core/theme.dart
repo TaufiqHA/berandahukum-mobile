@@ -26,6 +26,11 @@ class AppTheme {
         centerTitle: false,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
+        // Meniru header situs: garis merah di atas + garis tipis di bawah.
+        shape: Border(
+          top: BorderSide(color: brand, width: 4),
+          bottom: BorderSide(color: line, width: 1),
+        ),
       ),
       dividerTheme: const DividerThemeData(color: line, thickness: 1, space: 1),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(

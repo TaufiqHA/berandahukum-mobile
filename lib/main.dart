@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 
 import 'core/theme.dart';
 import 'screens/bookmarks_screen.dart';
-import 'screens/category_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/questions_screen.dart';
 import 'screens/search_screen.dart';
@@ -96,7 +95,6 @@ class _RootShellState extends State<RootShell> {
 
   static const _pages = [
     HomeScreen(),
-    CategoryListScreen(),
     SearchScreen(),
     QuestionsScreen(),
     BookmarksScreen(),
@@ -115,7 +113,6 @@ class _RootShellState extends State<RootShell> {
           onTap: (i) => setState(() => _index = i),
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Beranda'),
-            BottomNavigationBarItem(icon: Icon(Icons.grid_view_outlined), activeIcon: Icon(Icons.grid_view), label: 'Kategori'),
             BottomNavigationBarItem(icon: Icon(Icons.search), activeIcon: Icon(Icons.search), label: 'Cari'),
             BottomNavigationBarItem(icon: Icon(Icons.help_outline), activeIcon: Icon(Icons.help), label: 'Tanya'),
             BottomNavigationBarItem(icon: Icon(Icons.bookmark_border), activeIcon: Icon(Icons.bookmark), label: 'Disimpan'),

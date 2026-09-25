@@ -6,12 +6,13 @@ import '../core/theme.dart';
 import '../models/models.dart';
 import 'widgets.dart';
 
+/// Carousel sorotan: gambar + bar caption (judul & penulis) menempel di bawah,
+/// dengan tombol panah — meniru slider pada situs mobile.
 class HeroSlider extends StatefulWidget {
   final List<Article> items;
   final void Function(Article) onTap;
 
-  /// Jarak teks dari tepi layar agar tetap sejajar dengan konten halaman,
-  /// sementara gambar dibuat full-bleed (menyentuh tepi).
+  /// Disimpan untuk kompatibilitas; caption kini full-bleed.
   final double inset;
 
   const HeroSlider({super.key, required this.items, required this.onTap, this.inset = 0});
@@ -32,8 +33,7 @@ class _HeroSliderState extends State<HeroSlider> {
       _timer = Timer.periodic(const Duration(seconds: 5), (_) {
         if (!mounted) return;
         final next = (_index + 1) % widget.items.length;
-        _controller.animateToPage(next,
-            duration: const Duration(milliseconds: 450), curve: Curves.easeInOut);
+        _controller.animateToPage(next, duration: const Duration(milliseconds: 450), curve: Curves.easeInOut);
       });
     }
   }
@@ -45,14 +45,25 @@ class _HeroSliderState extends State<HeroSlider> {
     super.dispose();
   }
 
+  void _go(int delta) {
+    final next = (_index + delta) % widget.items.length;
+    _controller.animateToPage(next < 0 ? next + widget.items.length : next,
+        duration: const Duration(milliseconds: 350), curve: Curves.easeInOut);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.items.isEmpty) return const SizedBox.shrink();
-    return Column(
-      children: [
-        SizedBox(
-          height: 240,
-          child: PageView.builder(
+
+    final width = MediaQuery.of(context).size.width;
+    final imageHeight = width * 9 / 16;
+    const captionHeight = 96.0;
+
+    return SizedBox(
+      height: imageHeight + captionHeight,
+      child: Stack(
+        children: [
+          PageView.builder(
             controller: _controller,
             itemCount: widget.items.length,
             onPageChanged: (i) => setState(() => _index = i),
@@ -61,18 +72,33 @@ class _HeroSliderState extends State<HeroSlider> {
               return GestureDetector(
                 onTap: () => widget.onTap(a),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(child: MagazineImage(path: a.image, expand: true)),
-                    const SizedBox(height: 10),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: widget.inset),
+                    SizedBox(
+                      height: imageHeight,
+                      width: double.infinity,
+                      child: MagazineImage(path: a.image, expand: true),
+                    ),
+                    Container(
+                      height: captionHeight,
+                      color: AppTheme.ink,
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text('SOROTAN', style: TextStyle(color: AppTheme.brand, fontWeight: FontWeight.w800, letterSpacing: 1.2, fontSize: 10.5)),
-                          const SizedBox(height: 4),
-                          Text(a.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'serif', fontSize: 22, fontWeight: FontWeight.w700, height: 1.15, color: AppTheme.ink)),
+                          Text(
+                            a.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontFamily: 'serif', fontSize: 20, fontWeight: FontWeight.w700, height: 1.15, color: Colors.white),
+                          ),
+                          const SizedBox(height: 8),
+                          if (a.author.isNotEmpty)
+                            Text(a.author,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontSize: 13, color: Colors.white70)),
                         ],
                       ),
                     ),
@@ -81,28 +107,30 @@ class _HeroSliderState extends State<HeroSlider> {
               );
             },
           ),
-        ),
-        if (widget.items.length > 1) ...[
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(widget.items.length, (i) {
-              final active = i == _index;
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                width: active ? 22 : 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: active ? AppTheme.brand : Colors.transparent,
-                  border: Border.all(color: active ? AppTheme.brand : const Color(0xFF9B9A93)),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              );
-            }),
-          ),
+          if (widget.items.length > 1) ...[
+            Positioned(
+              left: 0,
+              top: 0,
+              height: imageHeight,
+              child: Center(child: _arrow(Icons.chevron_left, () => _go(-1))),
+            ),
+            Positioned(
+              right: 0,
+              top: 0,
+              height: imageHeight,
+              child: Center(child: _arrow(Icons.chevron_right, () => _go(1))),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
+
+  Widget _arrow(IconData icon, VoidCallback onTap) => Material(
+        color: Colors.black.withValues(alpha: .5),
+        child: InkWell(
+          onTap: onTap,
+          child: SizedBox(width: 44, height: 60, child: Icon(icon, color: Colors.white, size: 30)),
+        ),
+      );
 }

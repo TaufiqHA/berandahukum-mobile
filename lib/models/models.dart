@@ -121,6 +121,17 @@ class Category {
       );
 }
 
+/// Banner/iklan gambar dari API (mis. banner atas, tile, iklan bawah).
+class AdBanner {
+  final String image;
+  final String? link;
+  AdBanner({required this.image, this.link});
+  factory AdBanner.fromJson(Map<String, dynamic> j) {
+    final link = (j['link'] ?? '') as String;
+    return AdBanner(image: j['image'] ?? '', link: link.isEmpty ? null : link);
+  }
+}
+
 class Question {
   final int id;
   final String name;
@@ -154,6 +165,10 @@ class HomeData {
   final List<Article> pilihanBawah;
   final List<Category> categories;
   final List<Category> labels;
+  final AdBanner? adsTop;
+  final AdBanner? adsMiddle;
+  final List<AdBanner> banners;
+  final AdBanner? adsBottom;
   final bool showPertanyaan;
   final bool showYoutube;
 
@@ -165,6 +180,10 @@ class HomeData {
     required this.pilihanBawah,
     required this.categories,
     required this.labels,
+    this.adsTop,
+    this.adsMiddle,
+    this.banners = const [],
+    this.adsBottom,
     required this.showPertanyaan,
     required this.showYoutube,
   });
@@ -177,6 +196,10 @@ class HomeData {
         pilihanBawah: (j['pilihan_bawah'] as List? ?? []).map((e) => Article.fromJson(e)).toList(),
         categories: (j['categories'] as List).map((e) => Category.fromJson(e)).toList(),
         labels: (j['labels'] as List).map((e) => Category.fromJson(e)).toList(),
+        adsTop: j['ads_top'] == null ? null : AdBanner.fromJson(Map<String, dynamic>.from(j['ads_top'])),
+        adsMiddle: j['ads_middle'] == null ? null : AdBanner.fromJson(Map<String, dynamic>.from(j['ads_middle'])),
+        banners: (j['banners'] as List? ?? []).map((e) => AdBanner.fromJson(Map<String, dynamic>.from(e))).toList(),
+        adsBottom: j['ads_bottom'] == null ? null : AdBanner.fromJson(Map<String, dynamic>.from(j['ads_bottom'])),
         showPertanyaan: j['show_pertanyaan'] ?? true,
         showYoutube: j['show_youtube'] ?? true,
       );

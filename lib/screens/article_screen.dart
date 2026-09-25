@@ -3,6 +3,7 @@ import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../core/config.dart';
 import '../core/theme.dart';
 import '../models/models.dart';
 import '../services/api.dart';
@@ -109,6 +110,8 @@ class _ArticleScreenState extends State<ArticleScreen> {
         const SizedBox(height: 12),
         Text('${formatDate(a.date)}   ·   ${a.author}   ·   ${a.views}x dibaca',
             style: const TextStyle(fontSize: 11, letterSpacing: .4, color: AppTheme.ink500)),
+        const SizedBox(height: 12),
+        _ShareRow(uri: a.uri, title: a.title),
         const Divider(height: 28),
         if (a.image != null) ...[MagazineImage(path: a.image, aspectRatio: 16 / 9), const SizedBox(height: 16)],
         HtmlWidget(
@@ -209,4 +212,37 @@ class _ErrorView extends StatelessWidget {
           ]),
         ),
       );
+}
+
+/// Baris tombol bagikan (Twitter/Facebook/WhatsApp/Telegram) — meniru situs.
+class _ShareRow extends StatelessWidget {
+  final String uri;
+  final String title;
+  const _ShareRow({required this.uri, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    final url = Uri.encodeComponent('${AppConfig.host}/a/$uri');
+    final text = Uri.encodeComponent(title);
+    final links = <String, String>{
+      'Twitter': 'https://twitter.com/intent/tweet?url=$url&text=$text',
+      'Facebook': 'https://www.facebook.com/sharer/sharer.php?u=$url',
+      'WhatsApp': 'https://wa.me/?text=$text%20$url',
+      'Telegram': 'https://t.me/share/url?url=$url&text=$text',
+    };
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 12,
+      runSpacing: 4,
+      children: [
+        const Text('Bagikan:', style: TextStyle(fontSize: 11.5, color: AppTheme.ink500)),
+        for (final e in links.entries)
+          InkWell(
+            onTap: () => launchUrl(Uri.parse(e.value), mode: LaunchMode.externalApplication),
+            child: Text(e.key,
+                style: const TextStyle(fontSize: 12, color: AppTheme.brandStrong, fontWeight: FontWeight.w600)),
+          ),
+      ],
+    );
+  }
 }

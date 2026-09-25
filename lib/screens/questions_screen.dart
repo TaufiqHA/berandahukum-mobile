@@ -133,9 +133,16 @@ class _QuestionsScreenState extends State<QuestionsScreen> {
                   child: ListView.builder(
                     controller: _scroll,
                     padding: const EdgeInsets.fromLTRB(20, 12, 20, 90),
-                    itemCount: _items.length,
+                    itemCount: _items.length + 1,
                     itemBuilder: (context, i) {
-                      final q = _items[i];
+                      if (i == 0) {
+                        return const Padding(
+                          padding: EdgeInsets.only(bottom: 8),
+                          child: Text('DAFTAR PERTANYAAN',
+                              style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1.2, fontSize: 12.5, color: AppTheme.ink)),
+                        );
+                      }
+                      final q = _items[i - 1];
                       return Container(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppTheme.line))),

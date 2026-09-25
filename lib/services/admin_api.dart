@@ -210,4 +210,23 @@ class AdminApi {
 
   static Future<void> saveSysSettings({required bool showPertanyaan, required bool showYoutube}) =>
       _post('settings/sys', {'show_pertanyaan': showPertanyaan, 'show_youtube': showYoutube}).then((_) {});
+
+  // ---- Slider / sorotan beranda (admin) ----
+
+  static Future<Map<String, dynamic>> slider() => _get('slider');
+
+  static Future<List<Map<String, dynamic>>> sliderArticles(String q) async {
+    final res = await _get('slider/articles', {'q': q});
+    return ((res['data'] as List?) ?? const []).cast<Map<String, dynamic>>();
+  }
+
+  static Future<void> saveSlider({int? id, required int articleId, int? urutan}) {
+    final body = <String, dynamic>{'article_id': articleId};
+    if (urutan != null) body['urutan'] = urutan;
+    return id == null ? _post('slider', body).then((_) {}) : _post('slider/$id', body).then((_) {});
+  }
+
+  static Future<void> deleteSlider(int id) => _delete('slider/$id').then((_) {});
+
+  static Future<void> saveSliderOrder(List<int> ids) => _post('slider/urutan', {'position': ids}).then((_) {});
 }
