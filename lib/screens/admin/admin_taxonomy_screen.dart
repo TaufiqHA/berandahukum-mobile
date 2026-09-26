@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
 import '../../services/admin_api.dart';
+import 'admin_article_order_screen.dart';
+import 'admin_subcategory_order_screen.dart';
 import 'admin_ui.dart';
 
 enum TaxonomyKind { label, category, subCategory }
@@ -17,6 +19,7 @@ class AdminTaxonomyScreen extends StatefulWidget {
 class _AdminTaxonomyScreenState extends State<AdminTaxonomyScreen> {
   late Future<List<Map<String, dynamic>>> _future;
   List<Map<String, dynamic>> _categories = const [];
+  List<Map<String, dynamic>> _rows = [];
 
   String get _title => switch (widget.kind) {
         TaxonomyKind.label => 'Label',
@@ -31,19 +34,65 @@ class _AdminTaxonomyScreenState extends State<AdminTaxonomyScreen> {
   }
 
   Future<List<Map<String, dynamic>>> _load() async {
+    List<Map<String, dynamic>> rows;
     if (widget.kind == TaxonomyKind.subCategory) {
       final cats = await AdminApi.categories();
       _categories = ((cats['data'] as List?) ?? const []).cast<Map<String, dynamic>>();
       final res = await AdminApi.subCategories();
-      return ((res['data'] as List?) ?? const []).cast<Map<String, dynamic>>();
+      rows = ((res['data'] as List?) ?? const []).cast<Map<String, dynamic>>();
+    } else {
+      final res = widget.kind == TaxonomyKind.label ? await AdminApi.labels() : await AdminApi.categories();
+      rows = ((res['data'] as List?) ?? const []).cast<Map<String, dynamic>>();
     }
-    final res = widget.kind == TaxonomyKind.label ? await AdminApi.labels() : await AdminApi.categories();
-    return ((res['data'] as List?) ?? const []).cast<Map<String, dynamic>>();
+    _rows = List.of(rows);
+    return rows;
   }
 
   Future<void> _reload() async {
     setState(() { _future = _load(); });
     await _future;
+  }
+
+  /// Buka pengaturan urutan sub-kategori untuk sebuah kategori.
+  void _openSubOrder(Map<String, dynamic> row) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AdminSubCategoryOrderScreen(
+          categoryId: row['id'] as int,
+          categoryName: row['name'].toString(),
+        ),
+      ),
+    );
+  }
+
+  /// Buka pengaturan urutan artikel untuk sebuah sub-kategori.
+  void _openArticleOrder(Map<String, dynamic> row) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AdminArticleOrderScreen(
+          subCategoryId: row['id'] as int,
+          subCategoryName: row['name'].toString(),
+        ),
+      ),
+    );
+  }
+
+  /// Simpan urutan kategori setelah digeser (khusus kategori).
+  Future<void> _onReorder(int oldIndex, int newIndex) async {
+    if (newIndex > oldIndex) newIndex -= 1;
+    setState(() {
+      final item = _rows.removeAt(oldIndex);
+      _rows.insert(newIndex, item);
+    });
+    try {
+      await AdminApi.saveCategoryOrder(_rows.map((r) => r['id'] as int).toList());
+      if (mounted) adminSnack(context, 'Urutan kategori disimpan.');
+    } catch (e) {
+      if (mounted) adminSnack(context, e.toString(), error: true);
+      await _reload();
+    }
   }
 
   Future<void> _remove(Map<String, dynamic> row) async {
@@ -146,27 +195,29 @@ class _AdminTaxonomyScreenState extends State<AdminTaxonomyScreen> {
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) return const AdminLoading();
           if (snap.hasError) return AdminErrorView(message: snap.error.toString(), onRetry: _reload);
-          final rows = snap.data!;
-          if (rows.isEmpty) return const AdminEmpty();
+          if (_rows.isEmpty) return const AdminEmpty();
+          if (widget.kind == TaxonomyKind.category) return _categoryList();
           return RefreshIndicator(
             color: AppTheme.brand,
             onRefresh: _reload,
             child: ListView.separated(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-              itemCount: rows.length,
+              itemCount: _rows.length,
               separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (context, i) {
-                final row = rows[i];
+                final row = _rows[i];
                 final showOn = row['show'] == true;
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
+                  onTap: widget.kind == TaxonomyKind.subCategory ? () => _openArticleOrder(row) : null,
                   title: Text(row['name'].toString(),
                       style: const TextStyle(fontFamily: 'serif', fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.ink)),
                   subtitle: Text(
                     [
                       if (widget.kind == TaxonomyKind.subCategory) row['category_name']?.toString() ?? '-',
                       showOn ? 'Tampil' : 'Disembunyikan',
-                      if (widget.kind != TaxonomyKind.category && row['urutan'] != null) 'urutan ${row['urutan']}',
+                      if (widget.kind == TaxonomyKind.subCategory) 'ketuk: urut artikel',
+                      if (row['urutan'] != null) 'urutan ${row['urutan']}',
                     ].join(' · '),
                     style: TextStyle(fontSize: 12, color: showOn ? AppTheme.ink500 : AppTheme.brand),
                   ),
@@ -181,5 +232,61 @@ class _AdminTaxonomyScreenState extends State<AdminTaxonomyScreen> {
         },
       ),
     );
+  }
+
+  /// Daftar kategori: digeser untuk mengubah urutan kartu accordion di beranda.
+  Widget _categoryList() {
+    return Column(children: [
+      Container(
+        width: double.infinity,
+        color: AppTheme.tint,
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        child: const Text(
+            'Seret ikon di kanan untuk mengubah urutan kategori. Ketuk kategori untuk mengatur urutan sub-kategori.',
+            style: TextStyle(fontSize: 12, color: AppTheme.ink600)),
+      ),
+      Expanded(
+        child: RefreshIndicator(
+          color: AppTheme.brand,
+          onRefresh: _reload,
+          child: ReorderableListView.builder(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
+            itemCount: _rows.length,
+            // ignore: deprecated_member_use
+            onReorder: _onReorder,
+            itemBuilder: (context, i) {
+              final row = _rows[i];
+              final showOn = row['show'] == true;
+              return ListTile(
+                key: ValueKey(row['id']),
+                contentPadding: EdgeInsets.zero,
+                onTap: () => _openSubOrder(row),
+                leading: Text('${i + 1}',
+                    style: const TextStyle(
+                        fontFamily: 'serif', fontWeight: FontWeight.w700, color: AppTheme.brand, fontSize: 17)),
+                title: Text(row['name'].toString(),
+                    style: const TextStyle(fontFamily: 'serif', fontSize: 16, fontWeight: FontWeight.w700, color: AppTheme.ink)),
+                subtitle: Text(
+                  [
+                    showOn ? 'Tampil' : 'Disembunyikan',
+                    '${row['sub_count'] ?? 0} sub kategori · ketuk: urut sub',
+                  ].join(' · '),
+                  style: TextStyle(fontSize: 12, color: showOn ? AppTheme.ink500 : AppTheme.brand),
+                ),
+                trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                  IconButton(icon: const Icon(Icons.edit_outlined, size: 20), onPressed: () => _openForm(row)),
+                  IconButton(icon: const Icon(Icons.delete_outline, size: 20, color: AppTheme.brand), onPressed: () => _remove(row)),
+                  ReorderableDragStartListener(
+                    index: i,
+                    child: const Padding(
+                        padding: EdgeInsets.only(left: 4), child: Icon(Icons.drag_handle, color: AppTheme.ink500)),
+                  ),
+                ]),
+              );
+            },
+          ),
+        ),
+      ),
+    ]);
   }
 }

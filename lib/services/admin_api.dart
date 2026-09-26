@@ -165,21 +165,47 @@ class AdminApi {
 
   static Future<Map<String, dynamic>> categories() => _get('categories');
 
-  static Future<void> saveCategory({int? id, required String name, required bool show, int urutan = 0}) {
-    final body = {'name': name, 'show': show, 'urutan': urutan};
+  static Future<void> saveCategory({int? id, required String name, required bool show, int? urutan}) {
+    final body = <String, dynamic>{
+      'name': name,
+      'show': show,
+      // Jangan kirim urutan saat menyunting agar tidak mengacak urutan hasil geser.
+      'urutan': ?urutan,
+    };
     return id == null ? _post('categories', body).then((_) {}) : _post('categories/$id', body).then((_) {});
   }
+
+  static Future<void> saveCategoryOrder(List<int> ids) =>
+      _post('categories/urutan', {'position': ids}).then((_) {});
 
   static Future<void> deleteCategory(int id) => _delete('categories/$id').then((_) {});
 
   static Future<Map<String, dynamic>> subCategories() => _get('sub-categories');
 
-  static Future<void> saveSubCategory({int? id, required int categoryId, required String name, required bool show}) {
-    final body = {'category_id': categoryId, 'name': name, 'show': show};
+  static Future<void> saveSubCategory({int? id, required int categoryId, required String name, required bool show, int? urutan}) {
+    final body = <String, dynamic>{
+      'category_id': categoryId,
+      'name': name,
+      'show': show,
+      // Jangan kirim urutan saat menyunting agar tidak mengacak urutan hasil geser.
+      'urutan': ?urutan,
+    };
     return id == null ? _post('sub-categories', body).then((_) {}) : _post('sub-categories/$id', body).then((_) {});
   }
 
+  static Future<void> saveSubCategoryOrder(List<int> ids) =>
+      _post('sub-categories/urutan', {'position': ids}).then((_) {});
+
   static Future<void> deleteSubCategory(int id) => _delete('sub-categories/$id').then((_) {});
+
+  /// Artikel pada sebuah sub-kategori (untuk pengaturan urutan).
+  static Future<List<Map<String, dynamic>>> subCategoryArticles(int subCategoryId) async {
+    final res = await _get('sub-categories/$subCategoryId/articles');
+    return ((res['data'] as List?) ?? const []).cast<Map<String, dynamic>>();
+  }
+
+  static Future<void> saveSubCategoryArticleOrder(int subCategoryId, List<int> articleIds) =>
+      _post('sub-categories/$subCategoryId/articles/urutan', {'position': articleIds}).then((_) {});
 
   static Future<Map<String, dynamic>> labels() => _get('labels');
 
