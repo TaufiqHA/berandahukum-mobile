@@ -54,11 +54,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Tinggi header = toolbar + area status bar. Logo dibuat lebih dari
+    // Tinggi header = toolbar + area status bar. Logo dibuat sekitar
     // setengahnya, dibatasi agar tidak mengecil di desktop dan tidak overflow.
-    const double headerToolbarHeight = 80;
+    const double headerToolbarHeight = 76;
     final double headerHeight = headerToolbarHeight + MediaQuery.paddingOf(context).top;
-    final double logoHeight = (headerHeight * 0.55).clamp(44.0, 70.0);
+    final double logoHeight = (headerHeight * 0.5).clamp(38.0, 60.0);
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: headerToolbarHeight,
