@@ -54,11 +54,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Tinggi header = toolbar + area status bar. Logo dibuat lebih dari
+    // setengahnya, dibatasi agar tidak mengecil di desktop dan tidak overflow.
+    const double headerToolbarHeight = 80;
+    final double headerHeight = headerToolbarHeight + MediaQuery.paddingOf(context).top;
+    final double logoHeight = (headerHeight * 0.55).clamp(44.0, 70.0);
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: headerToolbarHeight,
         titleSpacing: 20,
         title: Row(children: [
-          Image.asset('assets/logo.png', height: 30,
+          Image.asset('assets/logo.png', height: logoHeight,
               errorBuilder: (_, _, _) => const Text('BERANDA HUKUM',
                   style: TextStyle(fontFamily: 'serif', fontWeight: FontWeight.w700))),
         ]),
