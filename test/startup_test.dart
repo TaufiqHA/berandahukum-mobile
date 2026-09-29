@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:berandahukum_mobile/main.dart';
-import 'package:berandahukum_mobile/state/admin_auth.dart';
-import 'package:berandahukum_mobile/state/bookmarks.dart';
+import 'package:belajarhukum/main.dart';
+import 'package:belajarhukum/state/admin_auth.dart';
+import 'package:belajarhukum/state/bookmarks.dart';
 
 void main() {
   testWidgets('start-up tanpa jaringan tidak melontarkan exception', (tester) async {

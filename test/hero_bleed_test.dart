@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:berandahukum_mobile/models/models.dart';
-import 'package:berandahukum_mobile/widgets/hero_slider.dart';
-import 'package:berandahukum_mobile/widgets/widgets.dart';
+import 'package:belajarhukum/models/models.dart';
+import 'package:belajarhukum/widgets/hero_slider.dart';
+import 'package:belajarhukum/widgets/widgets.dart';
 
 void main() {
   testWidgets('gambar hero mengisi lebar layar', (tester) async {

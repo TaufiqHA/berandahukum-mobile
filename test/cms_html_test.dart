@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:berandahukum_mobile/widgets/cms_html.dart';
+import 'package:belajarhukum/widgets/cms_html.dart';
 
 void main() {
   testWidgets('mengetuk tautan artikel internal memanggil onArticle', (tester) async {

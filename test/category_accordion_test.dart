@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:berandahukum_mobile/core/theme.dart';
-import 'package:berandahukum_mobile/models/models.dart';
-import 'package:berandahukum_mobile/widgets/site_widgets.dart';
+import 'package:belajarhukum/core/theme.dart';
+import 'package:belajarhukum/models/models.dart';
+import 'package:belajarhukum/widgets/site_widgets.dart';
 
 void main() {
   testWidgets('kategori dapat di-expand untuk menampilkan sub-kategori', (tester) async {

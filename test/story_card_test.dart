@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:berandahukum_mobile/models/models.dart';
-import 'package:berandahukum_mobile/widgets/widgets.dart';
+import 'package:belajarhukum/models/models.dart';
+import 'package:belajarhukum/widgets/widgets.dart';
 
 void main() {
   testWidgets('StoryCard compact menampilkan judul + tanggal tanpa thumbnail', (tester) async {

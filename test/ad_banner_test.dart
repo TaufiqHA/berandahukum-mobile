@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:berandahukum_mobile/widgets/site_widgets.dart';
+import 'package:belajarhukum/widgets/site_widgets.dart';
 
 void main() {
   test('articleUri mengekstrak uri artikel dari tautan banner', () {

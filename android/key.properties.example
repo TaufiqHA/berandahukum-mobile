@@ -1,0 +1,16 @@
+# Salin file ini menjadi `android/key.properties`, lalu isi nilainya.
+#
+# File `android/key.properties` TIDAK ikut ter-commit (lihat .gitignore),
+# sehingga password keystore tetap aman.
+#
+# Build release WAJIB memakai keystore yang sama dengan aplikasi yang sudah
+# dipublikasikan, karena sertifikatnya harus menghasilkan fingerprint:
+#   SHA1: 74:CE:0F:98:9F:54:93:A9:C3:B3:75:0C:89:CA:C0:75:D9:16:0C:A1
+#
+# storeFile: path ke file keystore (.jks), relatif terhadap folder android/ atau absolut.
+# keyAlias : alias di dalam keystore.
+
+storePassword=
+keyPassword=
+keyAlias=
+storeFile=

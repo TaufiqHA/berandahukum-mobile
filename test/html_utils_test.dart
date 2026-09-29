@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:berandahukum_mobile/core/html_utils.dart';
+import 'package:belajarhukum/core/html_utils.dart';
 
 void main() {
   test('removes fixed height from style and attributes', () {

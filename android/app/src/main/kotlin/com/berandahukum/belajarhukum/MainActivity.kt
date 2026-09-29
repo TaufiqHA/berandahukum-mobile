@@ -1,4 +1,4 @@
-package com.berandahukum.berandahukum_mobile
+package com.berandahukum.belajarhukum
 
 import io.flutter.embedding.android.FlutterActivity
 
