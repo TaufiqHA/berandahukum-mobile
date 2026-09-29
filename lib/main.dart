@@ -1,7 +1,11 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart' show FlutterQuillLocalizations;
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:image_picker_android/image_picker_android.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
 import 'package:provider/provider.dart';
@@ -23,6 +27,16 @@ Future<void> main() async {
   final pickerPlatform = ImagePickerPlatform.instance;
   if (pickerPlatform is ImagePickerAndroid) {
     pickerPlatform.useAndroidPhotoPicker = true;
+  }
+
+  // Inisialisasi SDK AdMob (hanya Android/iOS). Kegagalan tidak boleh
+  // menggagalkan start-up aplikasi; iklan hanya tidak akan tampil.
+  if (Platform.isAndroid || Platform.isIOS) {
+    try {
+      unawaited(MobileAds.instance.initialize());
+    } catch (e, s) {
+      debugPrint('Inisialisasi AdMob gagal: $e\n$s');
+    }
   }
 
   // Tampilkan pesan kesalahan alih-alih layar putih bila ada error render.

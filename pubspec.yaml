@@ -51,6 +51,8 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   font_awesome_flutter: ^11.0.0
+  # Iklan AdMob native (in-feed) — hanya Android/iOS.
+  google_mobile_ads: ^9.1.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

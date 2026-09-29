@@ -19,6 +19,7 @@ class AdminAdsScreen extends StatefulWidget {
 
 class _AdminAdsScreenState extends State<AdminAdsScreen> {
   late Future<List<Map<String, dynamic>>> _future;
+  List<Map<String, dynamic>> _rows = [];
   List<Map<String, dynamic>> _categories = const [];
 
   @override
@@ -33,7 +34,9 @@ class _AdminAdsScreenState extends State<AdminAdsScreen> {
     // Hanya kategori yang tampil di beranda (category_show = yes), karena
     // iklan antar-kategori hanya muncul pada kartu kategori beranda.
     _categories = all.where((c) => c['show'] == true).toList();
-    return ((results[0]['data'] as List?) ?? const []).cast<Map<String, dynamic>>();
+    final rows = ((results[0]['data'] as List?) ?? const []).cast<Map<String, dynamic>>();
+    _rows = List.of(rows);
+    return rows;
   }
 
   String _placementName(dynamic id, dynamic position) {
@@ -75,6 +78,40 @@ class _AdminAdsScreenState extends State<AdminAdsScreen> {
     }
   }
 
+  /// Geser iklan untuk mengubah urutannya. Urutan hanya berlaku di dalam
+  /// penempatan yang sama (antar kategori / atas / bawah beranda / atas artikel).
+  Future<void> _onReorder(int oldIndex, int newIndex) async {
+    if (newIndex > oldIndex) newIndex -= 1;
+    if (oldIndex < 0 || oldIndex >= _rows.length) return;
+
+    final position = _rows[oldIndex]['position'];
+    // Batasi perpindahan agar tidak keluar dari kelompok penempatan.
+    final start = _rows.indexWhere((r) => r['position'] == position);
+    final end = _rows.lastIndexWhere((r) => r['position'] == position);
+    if (start < 0 || end < 0) return;
+    if (newIndex < start) newIndex = start;
+    if (newIndex > end) newIndex = end;
+    if (newIndex == oldIndex) return;
+
+    setState(() {
+      final item = _rows.removeAt(oldIndex);
+      _rows.insert(newIndex, item);
+    });
+
+    try {
+      final ids = _rows
+          .where((r) => r['position'] == position)
+          .map((r) => r['id'] as int)
+          .toList();
+      await AdminApi.saveAdOrder(position: int.parse('$position'), ids: ids);
+      requestHomeReload();
+      if (mounted) adminSnack(context, 'Urutan iklan disimpan.');
+    } catch (e) {
+      if (mounted) adminSnack(context, e.toString(), error: true);
+      await _reload();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,37 +134,88 @@ class _AdminAdsScreenState extends State<AdminAdsScreen> {
           return RefreshIndicator(
             color: AppTheme.brand,
             onRefresh: _reload,
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
-              itemCount: rows.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (context, i) {
-                final row = rows[i];
-                final link = (row['link'] ?? '').toString();
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(children: [
-                    SizedBox(width: 96, child: MagazineImage(path: row['image']?.toString(), aspectRatio: 16 / 9)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(_placementName(row['category_id'], row['position']),
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.brand)),
-                        const SizedBox(height: 2),
-                        Text(link.isEmpty ? 'Tanpa link' : link,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 12.5, color: link.isEmpty ? AppTheme.ink500 : AppTheme.ink600)),
-                      ]),
-                    ),
-                    IconButton(icon: const Icon(Icons.edit_outlined, size: 20), onPressed: () => _openForm(row)),
-                    IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 20, color: AppTheme.brand),
-                        onPressed: () => _remove(row)),
-                  ]),
-                );
-              },
-            ),
+            child: Column(children: [
+              Container(
+                width: double.infinity,
+                color: AppTheme.tint,
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                child: const Text(
+                  'Seret ikon di kanan untuk mengatur urutan iklan. Urutan berlaku di dalam penempatan yang sama.',
+                  style: TextStyle(fontSize: 12, color: AppTheme.ink600),
+                ),
+              ),
+              Expanded(
+                child: ReorderableListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
+                  itemCount: _rows.length,
+                  buildDefaultDragHandles: false,
+                  // ignore: deprecated_member_use
+                  onReorder: _onReorder,
+                  itemBuilder: (context, i) {
+                    final row = _rows[i];
+                    final isAdmob = row['type'] == 'admob';
+                    final link = (row['link'] ?? '').toString();
+                    final unit = (row['admob_unit'] ?? '').toString();
+                    final detail = isAdmob ? 'AdMob: ${unit.isEmpty ? '-' : unit}' : (link.isEmpty ? 'Tanpa link' : link);
+                    return Container(
+                      key: ValueKey(row['id']),
+                      decoration: const BoxDecoration(
+                        border: Border(bottom: BorderSide(color: AppTheme.line)),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(children: [
+                          SizedBox(
+                            width: 96,
+                            child: isAdmob
+                                ? Container(
+                                    height: 54,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.tint,
+                                      border: Border.all(color: AppTheme.line),
+                                    ),
+                                    child: const Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.ads_click, size: 18, color: AppTheme.brand),
+                                        SizedBox(height: 2),
+                                        Text('AdMob', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppTheme.brand)),
+                                      ],
+                                    ),
+                                  )
+                                : MagazineImage(path: row['image']?.toString(), aspectRatio: 16 / 9),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(_placementName(row['category_id'], row['position']),
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppTheme.brand)),
+                              const SizedBox(height: 2),
+                              Text(detail,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 12.5, color: (isAdmob || link.isNotEmpty) ? AppTheme.ink600 : AppTheme.ink500)),
+                            ]),
+                          ),
+                          IconButton(icon: const Icon(Icons.edit_outlined, size: 20), onPressed: () => _openForm(row)),
+                          IconButton(
+                              icon: const Icon(Icons.delete_outline, size: 20, color: AppTheme.brand),
+                              onPressed: () => _remove(row)),
+                          ReorderableDragStartListener(
+                            index: i,
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 4),
+                              child: Icon(Icons.drag_handle, color: AppTheme.ink500),
+                            ),
+                          ),
+                        ]),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ]),
           );
         },
       ),
@@ -146,19 +234,24 @@ class AdminAdFormScreen extends StatefulWidget {
 
 class _AdminAdFormScreenState extends State<AdminAdFormScreen> {
   final _link = TextEditingController();
+  final _admobUnit = TextEditingController();
   String? _pickedImage;
   String? _existingImage;
   int? _categoryId;
   int _position = 100; // 100 = antar kategori, 101 = bawah beranda
+  String _kind = 'image'; // 'image' atau 'admob'
   bool _saving = false;
 
   bool get _isEdit => widget.row != null;
+  bool get _isAdmob => _kind == 'admob';
 
   @override
   void initState() {
     super.initState();
     if (_isEdit) {
+      _kind = (widget.row!['type'] ?? 'image').toString() == 'admob' ? 'admob' : 'image';
       _link.text = (widget.row!['link'] ?? '').toString();
+      _admobUnit.text = (widget.row!['admob_unit'] ?? '').toString();
       _existingImage = widget.row!['image']?.toString();
       final pos = widget.row!['position'];
       if (pos != null) _position = int.tryParse('$pos') ?? 100;
@@ -184,6 +277,7 @@ class _AdminAdFormScreenState extends State<AdminAdFormScreen> {
   @override
   void dispose() {
     _link.dispose();
+    _admobUnit.dispose();
     super.dispose();
   }
 
@@ -197,7 +291,12 @@ class _AdminAdFormScreenState extends State<AdminAdFormScreen> {
   }
 
   Future<void> _save() async {
-    if (_pickedImage == null && (_existingImage == null || _existingImage!.isEmpty)) {
+    if (_isAdmob) {
+      if (_admobUnit.text.trim().isEmpty) {
+        adminSnack(context, 'Ad Unit ID AdMob wajib diisi.', error: true);
+        return;
+      }
+    } else if (_pickedImage == null && (_existingImage == null || _existingImage!.isEmpty)) {
       adminSnack(context, 'Gambar iklan wajib dipilih.', error: true);
       return;
     }
@@ -205,10 +304,12 @@ class _AdminAdFormScreenState extends State<AdminAdFormScreen> {
     try {
       await AdminApi.saveAd(
         id: widget.row?['id'] as int?,
-        link: _link.text.trim(),
+        kind: _kind,
+        link: _isAdmob ? '' : _link.text.trim(),
         position: _position,
         categoryId: _position == 100 ? _categoryId : null,
-        imagePath: _pickedImage,
+        imagePath: _isAdmob ? null : _pickedImage,
+        admobUnit: _isAdmob ? _admobUnit.text.trim() : null,
       );
       if (mounted) {
         adminSnack(context, _isEdit ? 'Iklan diubah.' : 'Iklan disimpan.');
@@ -242,10 +343,25 @@ class _AdminAdFormScreenState extends State<AdminAdFormScreen> {
             'Atas beranda: di antara banner atas dan carousel (maks. 2). '
             'Atas artikel: di atas judul pada halaman artikel (maks. 2). '
             'Antar kategori: di antara kartu kategori, bisa dipasangkan ke kategori tertentu. '
-            'Bawah beranda: sebelum footer (maks. 3).',
+            'Bawah beranda: sebelum footer (maks. 3).\n\n'
+            'Pilih jenis iklan: Gambar (banner biasa) atau AdMob Native '
+            '(iklan in-feed yang menyatu dengan beranda).',
             style: TextStyle(fontSize: 12.5, color: AppTheme.ink500),
           ),
           const SizedBox(height: 16),
+          AdminField(
+            label: 'Jenis Iklan',
+            child: DropdownButtonFormField<String>(
+              initialValue: _kind,
+              isExpanded: true,
+              decoration: adminInputDecoration(),
+              items: const [
+                DropdownMenuItem(value: 'image', child: Text('Gambar / Banner')),
+                DropdownMenuItem(value: 'admob', child: Text('AdMob Native (in-feed)')),
+              ],
+              onChanged: (v) => setState(() => _kind = v ?? 'image'),
+            ),
+          ),
           AdminField(
             label: 'Penempatan',
             child: DropdownButtonFormField<int>(
@@ -276,33 +392,52 @@ class _AdminAdFormScreenState extends State<AdminAdFormScreen> {
                 onChanged: (v) => setState(() => _categoryId = v),
               ),
             ),
-          AdminField(
-            label: 'Gambar Iklan',
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              if (_pickedImage != null)
-                Image.file(File(_pickedImage!),
-                    height: 140,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => const Text('Gambar tidak dapat ditampilkan.',
-                        style: TextStyle(fontSize: 12.5, color: AppTheme.brand)))
-              else if (_existingImage != null && _existingImage!.isNotEmpty)
-                MagazineImage(path: _existingImage, aspectRatio: 16 / 9),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: _pickImage,
-                icon: const Icon(Icons.image_outlined, size: 18),
-                label: Text(_pickedImage == null && _existingImage == null ? 'Pilih Gambar' : 'Ganti Gambar'),
-              ),
-            ]),
-          ),
-          AdminField(
-            label: 'Link (opsional)',
-            child: TextField(
-              controller: _link,
-              keyboardType: TextInputType.url,
-              decoration: adminInputDecoration('https://… atau tautan artikel'),
+          if (_isAdmob)
+            AdminField(
+              label: 'Ad Unit ID AdMob',
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                TextField(
+                  controller: _admobUnit,
+                  autocorrect: false,
+                  decoration: adminInputDecoration('ca-app-pub-xxxxxxxxxxxxxxxx/yyyyyyyyyy'),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Salin Ad Unit ID dari dasbor AdMob (format ca-app-pub-…). '
+                  'ID ini ditampilkan sebagai iklan native di dalam aplikasi.',
+                  style: TextStyle(fontSize: 12, color: AppTheme.ink500),
+                ),
+              ]),
+            )
+          else ...[
+            AdminField(
+              label: 'Gambar Iklan',
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                if (_pickedImage != null)
+                  Image.file(File(_pickedImage!),
+                      height: 140,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const Text('Gambar tidak dapat ditampilkan.',
+                          style: TextStyle(fontSize: 12.5, color: AppTheme.brand)))
+                else if (_existingImage != null && _existingImage!.isNotEmpty)
+                  MagazineImage(path: _existingImage, aspectRatio: 16 / 9),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _pickImage,
+                  icon: const Icon(Icons.image_outlined, size: 18),
+                  label: Text(_pickedImage == null && _existingImage == null ? 'Pilih Gambar' : 'Ganti Gambar'),
+                ),
+              ]),
             ),
-          ),
+            AdminField(
+              label: 'Link (opsional)',
+              child: TextField(
+                controller: _link,
+                keyboardType: TextInputType.url,
+                decoration: adminInputDecoration('https://… atau tautan artikel'),
+              ),
+            ),
+          ],
         ],
       ),
     );

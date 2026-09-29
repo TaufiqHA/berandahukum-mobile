@@ -7,6 +7,7 @@ import '../core/config.dart';
 import '../core/theme.dart';
 import '../models/models.dart';
 import '../services/api.dart';
+import 'admob_view.dart';
 
 /// Banner/iklan gambar: ditampilkan seukuran aslinya (dibatasi lebar layar)
 /// dan diposisikan di tengah — sama seperti situs mobile.
@@ -33,6 +34,11 @@ class AdBannerView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Iklan AdMob native dirender oleh widget khusus (Android/iOS).
+    if (ad.isAdMob) {
+      return AdMobNativeView(adUnitId: ad.admobUnit!, padding: padding);
+    }
+
     final url = AppConfig.media(ad.image);
     if (url.isEmpty) return const SizedBox.shrink();
 

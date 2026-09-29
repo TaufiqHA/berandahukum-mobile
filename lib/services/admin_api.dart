@@ -267,18 +267,34 @@ class AdminApi {
 
   static Future<Map<String, dynamic>> ads() => _get('ads');
 
-  static Future<void> saveAd({int? id, required String link, int position = 100, int? categoryId, String? imagePath}) {
+  /// [kind] = `image` (bawaan) atau `admob`. Saat `admob`, [admobUnit] wajib
+  /// diisi dan [imagePath] diabaikan.
+  static Future<void> saveAd({
+    int? id,
+    required String link,
+    int position = 100,
+    int? categoryId,
+    String? imagePath,
+    String kind = 'image',
+    String? admobUnit,
+  }) {
     final fields = <String, String>{
+      'kind': kind,
       'link': link,
       'position': '$position',
       'category_id': '${categoryId ?? ''}',
+      if (admobUnit != null && admobUnit.isNotEmpty) 'admob_unit': admobUnit,
     };
     final path = id == null ? 'ads' : 'ads/$id';
-    if (imagePath != null) {
+    if (kind == 'image' && imagePath != null) {
       return _multipart(path, fields, 'image', imagePath).then((_) {});
     }
     return _post(path, fields).then((_) {});
   }
 
   static Future<void> deleteAd(int id) => _delete('ads/$id').then((_) {});
+
+  /// Simpan urutan iklan pada satu penempatan hasil geser.
+  static Future<void> saveAdOrder({required int position, required List<int> ids}) =>
+      _post('ads/urutan', {'position': position, 'ids': ids}).then((_) {});
 }

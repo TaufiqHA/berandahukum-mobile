@@ -126,7 +126,8 @@ class Category {
       );
 }
 
-/// Banner/iklan gambar dari API (mis. banner atas, tile, iklan bawah).
+/// Banner/iklan dari API (mis. banner atas, tile, iklan bawah).
+/// Mendukung dua jenis: gambar (`image`) dan AdMob native (`admob`).
 class AdBanner {
   final String image;
   final String? link;
@@ -135,14 +136,33 @@ class AdBanner {
   /// `null` = bergilir di celah kategori yang belum punya iklan khusus.
   final int? categoryId;
 
-  AdBanner({required this.image, this.link, this.categoryId});
+  /// Jenis iklan: `image` (bawaan) atau `admob`.
+  final String type;
+
+  /// Ad Unit ID AdMob (diisi saat [type] == `admob`).
+  final String? admobUnit;
+
+  AdBanner({
+    required this.image,
+    this.link,
+    this.categoryId,
+    this.type = 'image',
+    this.admobUnit,
+  });
+
+  /// True bila iklan AdMob dan punya Ad Unit ID.
+  bool get isAdMob => type == 'admob' && (admobUnit?.isNotEmpty ?? false);
+
   factory AdBanner.fromJson(Map<String, dynamic> j) {
     final link = (j['link'] ?? '') as String;
     final cat = j['category_id'];
+    final unit = (j['admob_unit'] ?? '') as String;
     return AdBanner(
       image: j['image'] ?? '',
       link: link.isEmpty ? null : link,
       categoryId: cat is int ? cat : (cat == null ? null : int.tryParse('$cat')),
+      type: (j['type'] ?? 'image').toString(),
+      admobUnit: unit.isEmpty ? null : unit,
     );
   }
 }

@@ -1,0 +1,37 @@
+{
+  "mcp": {
+    "servers": {
+      "dart": {
+        "type": "local",
+        "command": [
+          "/home/padikering/development/flutter/bin/dart",
+          "mcp-server"
+        ]
+      },
+      "context7": {
+        "type": "remote",
+        "url": "https://mcp.context7.com/mcp"
+      },
+      "filesystem": {
+        "type": "local",
+        "command": [
+          "/home/padikering/.bun/bin/bunx",
+          "-y",
+          "@modelcontextprotocol/server-filesystem",
+          "/home/padikering/Documents/KERJA/BerandaHukum/mobile"
+        ]
+      },
+      "git": {
+        "type": "local",
+        "command": [
+          "/home/padikering/.bun/bin/bunx",
+          "@cyanheads/git-mcp-server@latest"
+        ],
+        "environment": {
+          "GIT_BASE_DIR": "/home/padikering/Documents/KERJA/BerandaHukum/mobile",
+          "MCP_TRANSPORT_TYPE": "stdio"
+        }
+      }
+    }
+  }
+}
