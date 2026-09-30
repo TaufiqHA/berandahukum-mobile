@@ -64,6 +64,13 @@ android {
                 )
                 signingConfig = signingConfigs.getByName("debug")
             }
+            // Flutter mengaktifkan R8 (minify + shrinkResources) secara default di
+            // release. Aturan keep di proguard-rules.pro mencegah crash dari library
+            // yang memakai refleksi (Room/WorkManager dari AdMob).
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }
