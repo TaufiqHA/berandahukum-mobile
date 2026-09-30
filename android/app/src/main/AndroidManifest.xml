@@ -9,12 +9,11 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
-        <!-- AdMob Application ID. GANTI dengan App ID milik aplikasi
-             (AdMob → Apps → App settings). Nilai di bawah adalah ID uji
-             resmi Google; jangan dipakai untuk rilis produksi. -->
+        <!-- AdMob Application ID milik aplikasi Beranda Hukum
+             (AdMob → Apps → App settings). -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="ca-app-pub-4526658832356207~7058948475"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"
