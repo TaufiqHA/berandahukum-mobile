@@ -121,6 +121,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   AdBannerView(ad: b, onArticle: _openAdArticle),
                 ],
 
+                // Jarak antara iklan atas dan slider sorotan.
+                if (data.adsAtas.isNotEmpty) const SizedBox(height: 14),
+
                 // Carousel sorotan: artikel headline (fallback ke slider bila kosong)
                 HeroSlider(
                   items: data.headline.isNotEmpty ? data.headline : data.slider,
