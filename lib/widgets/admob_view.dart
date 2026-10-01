@@ -35,41 +35,50 @@ class _AdMobNativeViewState extends State<AdMobNativeView> {
   @override
   void initState() {
     super.initState();
-    _load();
+    // Tunda pemuatan iklan sampai frame pertama selesai agar pembuatan/pemuatan
+    // iklan (yang menyentuh Google Play Services) tidak menghambat start-up.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _load();
+    });
   }
 
   void _load() {
     if (!(Platform.isAndroid || Platform.isIOS)) return;
     if (widget.adUnitId.isEmpty) return;
 
-    final ad = NativeAd(
-      adUnitId: widget.adUnitId,
-      factoryId: kAdMobNativeFactoryId,
-      request: const AdRequest(),
-      listener: NativeAdListener(
-        onAdLoaded: (ad) {
-          if (!mounted) {
-            ad.dispose();
-            return;
-          }
-          setState(() {
-            _ad = ad as NativeAd;
-            _loaded = true;
-          });
-        },
-        onAdFailedToLoad: (ad, error) {
-          ad.dispose();
-          if (mounted) {
+    try {
+      final ad = NativeAd(
+        adUnitId: widget.adUnitId,
+        factoryId: kAdMobNativeFactoryId,
+        request: const AdRequest(),
+        listener: NativeAdListener(
+          onAdLoaded: (ad) {
+            if (!mounted) {
+              ad.dispose();
+              return;
+            }
             setState(() {
-              _ad = null;
-              _loaded = false;
+              _ad = ad as NativeAd;
+              _loaded = true;
             });
-          }
-        },
-      ),
-    );
-    _ad = ad;
-    ad.load();
+          },
+          onAdFailedToLoad: (ad, error) {
+            ad.dispose();
+            if (mounted) {
+              setState(() {
+                _ad = null;
+                _loaded = false;
+              });
+            }
+          },
+        ),
+      );
+      _ad = ad;
+      ad.load();
+    } catch (e, s) {
+      // Jangan biarkan kegagalan iklan menutup aplikasi.
+      debugPrint('Gagal memuat iklan native: $e\n$s');
+    }
   }
 
   @override

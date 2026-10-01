@@ -25,3 +25,17 @@
 }
 
 -dontwarn androidx.room.paging.**
+
+# --- Google Mobile Ads / AdMob ----------------------------------------------
+# Sebagian jalur native ad (aset iklan, template, dan kelas Dynamite yang
+# dimuat lewat refleksi) bisa tidak terlihat oleh R8 sehingga terhapus dan
+# membuat aplikasi crash hanya ketika iklan nyata berhasil dimuat. Jaga kelas
+# SDK iklan, plugin Flutter-nya, serta factory native milik aplikasi.
+-keep class com.google.android.gms.ads.** { *; }
+-keep class com.google.ads.** { *; }
+-keep class io.flutter.plugins.googlemobileads.** { *; }
+-keep class * implements io.flutter.plugins.googlemobileads.NativeAdFactory { *; }
+
+# Kelas milik aplikasi (MainActivity & FeedAdFactory) diakses dari manifest dan
+# plugin, jaga agar tidak ter-obfuscate.
+-keep class com.berandahukum.belajarhukum.** { *; }

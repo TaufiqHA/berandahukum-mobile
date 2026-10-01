@@ -29,14 +29,30 @@ Future<void> main() async {
     pickerPlatform.useAndroidPhotoPicker = true;
   }
 
-  // Inisialisasi SDK AdMob (hanya Android/iOS). Kegagalan tidak boleh
-  // menggagalkan start-up aplikasi; iklan hanya tidak akan tampil.
+  // Catat error Dart yang tidak tertangkap agar mudah didiagnosis dari logcat
+  // ketimbang hanya berupa layar putih/berhenti tanpa jejak.
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    debugPrint('FlutterError: ${details.exceptionAsString()}\n${details.stack}');
+  };
+  WidgetsBinding.instance.platformDispatcher.onError = (error, stack) {
+    debugPrint('Unhandled error: $error\n$stack');
+    return true;
+  };
+
+  // SDK AdMob (Android/iOS) menyentuh Google Play Services. Pada sebagian
+  // perangkat (mis. Xiaomi/HyperOS) GMS dibekukan/dibatasi sehingga pemanggilan
+  // ini dapat memblokir main thread dan aplikasi di-ANR/"berhenti" tepat saat
+  // dibuka. Karena itu inisialisasi ditunda sampai frame pertama tampil, dan
+  // kegagalannya tidak pernah menggagalkan start-up (iklan hanya tak tampil).
   if (Platform.isAndroid || Platform.isIOS) {
-    try {
-      unawaited(MobileAds.instance.initialize());
-    } catch (e, s) {
-      debugPrint('Inisialisasi AdMob gagal: $e\n$s');
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        unawaited(MobileAds.instance.initialize());
+      } catch (e, s) {
+        debugPrint('Inisialisasi AdMob gagal: $e\n$s');
+      }
+    });
   }
 
   // Tampilkan pesan kesalahan alih-alih layar putih bila ada error render.
