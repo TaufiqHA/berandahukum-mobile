@@ -2,10 +2,13 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Izin status jaringan dibutuhkan SDK Google Mobile Ads (AdMob). -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-    <!-- Izin baca media untuk sebagian perangkat/OEM saat memilih gambar dari galeri. -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
-    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED"/>
+    <!-- Pemilihan foto/video memakai Android Photo Picker (lihat lib/main.dart:
+         ImagePickerAndroid.useAndroidPhotoPicker = true). Photo Picker memberi
+         akses per-file yang dipilih pengguna sehingga aplikasi TIDAK memerlukan
+         izin akses media yang luas. Meminta READ_MEDIA_IMAGES / READ_MEDIA_VIDEO /
+         READ_EXTERNAL_STORAGE akan melanggar kebijakan Izin Foto dan Video
+         Google Play dan membuat update ditolak. Jangan tambahkan kembali izin
+         tersebut kecuali fungsionalitas inti benar-benar membutuhkannya. -->
     <application
         android:label="Beranda Hukum"
         android:name="${applicationName}"

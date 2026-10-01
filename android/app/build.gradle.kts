@@ -17,7 +17,13 @@ if (hasReleaseKeystore) {
 
 android {
     namespace = "com.berandahukum.belajarhukum"
-    compileSdk = flutter.compileSdkVersion
+    // Android 16 (API 36): memenuhi persyaratan target API Google Play
+    // ("harus menargetkan Android 15/API 35 atau lebih tinggi" dan
+    // "Android 16/API 36"). Di-pin eksplisit agar tidak ikut turun bila versi
+    // Flutter berubah. compileSdk harus >= targetSdk.
+    compileSdk = 36
+    // NDK r28 (28.2.x) mengompilasi pustaka native selaras 16 KB secara default,
+    // sehingga aplikasi memenuhi syarat ukuran halaman memori 16 KB.
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -31,7 +37,9 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // Wajib Android 16 (API 36) untuk update aplikasi ke Google Play
+        // (berlaku 31 Agu 2026). Di-pin eksplisit agar tidak ikut turun.
+        targetSdk = 36
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
         // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
