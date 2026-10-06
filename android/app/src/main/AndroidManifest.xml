@@ -13,6 +13,7 @@
         android:label="Beranda Hukum"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:usesCleartextTraffic="true">
         <!-- AdMob Application ID milik aplikasi Beranda Hukum
              (AdMob → Apps → App settings). -->
