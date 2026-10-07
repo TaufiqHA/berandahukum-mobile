@@ -119,7 +119,13 @@ class _CategoryAccordionState extends State<CategoryAccordion> {
   final _openCategories = <String>{};
   final _open = <String>{};
   final _loading = <String>{};
+  final _loadingMore = <String>{};
   final _articles = <String, List<Article>>{};
+
+  /// Halaman terakhir yang sudah dimuat dan total artikel, per sub-kategori.
+  final _page = <String, int>{};
+  final _lastPage = <String, int>{};
+  final _total = <String, int>{};
 
   Future<void> _toggle(Category sub) async {
     final isOpen = _open.contains(sub.uri);
@@ -138,12 +144,41 @@ class _CategoryAccordionState extends State<CategoryAccordion> {
     try {
       final p = await Api.taxonomyArticles('subcategories', sub.uri, 1);
       if (!mounted) return;
-      setState(() => _articles[sub.uri] = p.data);
+      setState(() {
+        _articles[sub.uri] = p.data;
+        _page[sub.uri] = p.currentPage;
+        _lastPage[sub.uri] = p.lastPage;
+        _total[sub.uri] = p.total;
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() => _articles[sub.uri] = const []);
     } finally {
       if (mounted) setState(() => _loading.remove(sub.uri));
+    }
+  }
+
+  /// Muat halaman artikel berikutnya pada sub-kategori yang sedang terbuka.
+  /// API mengirim maksimal satu halaman per permintaan, jadi tanpa ini artikel
+  /// setelah halaman pertama tidak pernah tampil.
+  Future<void> _loadMore(Category sub) async {
+    final next = (_page[sub.uri] ?? 1) + 1;
+    if (_loadingMore.contains(sub.uri) || next > (_lastPage[sub.uri] ?? 1)) return;
+
+    setState(() => _loadingMore.add(sub.uri));
+    try {
+      final p = await Api.taxonomyArticles('subcategories', sub.uri, next);
+      if (!mounted) return;
+      setState(() {
+        _articles[sub.uri] = [...?_articles[sub.uri], ...p.data];
+        _page[sub.uri] = p.currentPage;
+        _lastPage[sub.uri] = p.lastPage;
+        _total[sub.uri] = p.total;
+      });
+    } catch (_) {
+      // Biarkan tombol tetap tampil agar bisa dicoba lagi.
+    } finally {
+      if (mounted) setState(() => _loadingMore.remove(sub.uri));
     }
   }
 
@@ -292,6 +327,29 @@ class _CategoryAccordionState extends State<CategoryAccordion> {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                             child: Text(a.title, style: const TextStyle(fontSize: 13.5, color: AppTheme.ink600)),
+                          ),
+                        ),
+                      // API hanya mengirim satu halaman (12 artikel) per
+                      // permintaan; sediakan tombol untuk memuat sisanya agar
+                      // seluruh artikel sub-kategori bisa ditampilkan.
+                      if ((_page[s.uri] ?? 1) < (_lastPage[s.uri] ?? 1))
+                        InkWell(
+                          onTap: () => _loadMore(s),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            child: Center(
+                              child: _loadingMore.contains(s.uri)
+                                  ? const SizedBox(
+                                      height: 16,
+                                      width: 16,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.brand),
+                                    )
+                                  : Text(
+                                      'Muat selengkapnya (${_total[s.uri] ?? 0} artikel)',
+                                      style: const TextStyle(
+                                          fontSize: 12.5, fontWeight: FontWeight.w700, color: AppTheme.brand),
+                                    ),
+                            ),
                           ),
                         ),
                     ]),
