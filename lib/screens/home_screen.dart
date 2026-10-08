@@ -75,11 +75,19 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         toolbarHeight: headerToolbarHeight,
         titleSpacing: 20,
-        title: Row(children: [
-          Image.asset('assets/logo.png', height: logoHeight,
-              errorBuilder: (_, _, _) => const Text('BERANDA HUKUM',
-                  style: TextStyle(fontFamily: 'serif', fontWeight: FontWeight.w700))),
-        ]),
+        // Logo dibatasi oleh lebar slot AppBar (bukan `Row`, yang memberi lebar
+        // tak terbatas ke anaknya sehingga logo bisa overflow di layar sempit).
+        // `BoxFit.contain` menjaga rasio dan menyesuaikan ke lebar yang ada.
+        title: Align(
+          alignment: Alignment.centerLeft,
+          child: Image.asset(
+            'assets/logo.png',
+            height: logoHeight,
+            fit: BoxFit.contain,
+            errorBuilder: (_, _, _) => const Text('BERANDA HUKUM',
+                style: TextStyle(fontFamily: 'serif', fontWeight: FontWeight.w700)),
+          ),
+        ),
         actions: [
           IconButton(
             tooltip: 'Panel Admin',
