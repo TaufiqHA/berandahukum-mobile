@@ -48,7 +48,12 @@ Future<void> main() async {
   if (Platform.isAndroid || Platform.isIOS) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       try {
-        unawaited(MobileAds.instance.initialize());
+        MobileAds.instance
+            .initialize()
+            .then((status) => debugPrint('Inisialisasi AdMob selesai: ${status.adapterStatuses}'))
+            .catchError((Object e, StackTrace s) {
+          debugPrint('Inisialisasi AdMob gagal: $e\n$s');
+        });
       } catch (e, s) {
         debugPrint('Inisialisasi AdMob gagal: $e\n$s');
       }
