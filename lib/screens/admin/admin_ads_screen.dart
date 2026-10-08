@@ -9,6 +9,23 @@ import '../../state/app_events.dart';
 import '../../widgets/widgets.dart';
 import 'admin_ui.dart';
 
+/// Format iklan yang didukung panel admin. Kunci = nilai `type`, isi = label.
+const Map<String, String> kAdFormats = {
+  'image': 'Gambar / Banner',
+  'admob': 'AdMob Native (in-feed)',
+  'admob_banner': 'AdMob Banner (in-feed)',
+  'admob_interstitial': 'AdMob Interstitial (buka artikel)',
+  'admob_app_open': 'AdMob App Open (buka aplikasi)',
+  'admob_reward': 'AdMob Reward',
+};
+
+/// Format full-screen dipetakan ke posisi tetap di backend.
+const Map<String, int> kAdFullScreenPositions = {
+  'admob_interstitial': 104,
+  'admob_app_open': 105,
+  'admob_reward': 106,
+};
+
 /// Pengaturan iklan yang disisipkan di antara kartu kategori beranda.
 /// Khusus aplikasi mobile (posisi 100 pada tbl_ads).
 class AdminAdsScreen extends StatefulWidget {
@@ -43,6 +60,9 @@ class _AdminAdsScreenState extends State<AdminAdsScreen> {
     if (position == 101) return 'Bawah beranda';
     if (position == 102) return 'Atas beranda';
     if (position == 103) return 'Atas artikel';
+    if (position == 104) return 'Interstitial (buka artikel)';
+    if (position == 105) return 'App Open (buka aplikasi)';
+    if (position == 106) return 'Reward';
     if (id == null) return 'Bergilir di celah kategori';
     for (final c in _categories) {
       if (c['id'] == id) return 'Setelah: ${c['name']}';
@@ -153,10 +173,14 @@ class _AdminAdsScreenState extends State<AdminAdsScreen> {
                   onReorder: _onReorder,
                   itemBuilder: (context, i) {
                     final row = _rows[i];
-                    final isAdmob = row['type'] == 'admob';
+                    final type = (row['type'] ?? 'image').toString();
+                    final isAdmob = type != 'image';
                     final link = (row['link'] ?? '').toString();
                     final unit = (row['admob_unit'] ?? '').toString();
-                    final detail = isAdmob ? 'AdMob: ${unit.isEmpty ? '-' : unit}' : (link.isEmpty ? 'Tanpa link' : link);
+                    final formatLabel = kAdFormats[type] ?? type;
+                    final detail = isAdmob
+                        ? '$formatLabel: ${unit.isEmpty ? '-' : unit}'
+                        : (link.isEmpty ? 'Tanpa link' : link);
                     return Container(
                       key: ValueKey(row['id']),
                       decoration: const BoxDecoration(
@@ -239,17 +263,23 @@ class _AdminAdFormScreenState extends State<AdminAdFormScreen> {
   String? _existingImage;
   int? _categoryId;
   int _position = 100; // 100 = antar kategori, 101 = bawah beranda
-  String _kind = 'image'; // 'image' atau 'admob'
+  String _kind = 'image';
+
   bool _saving = false;
 
   bool get _isEdit => widget.row != null;
-  bool get _isAdmob => _kind == 'admob';
+  bool get _isAdmob => _kind != 'image';
+  bool get _isFullScreen => kAdFullScreenPositions.containsKey(_kind);
+
+  /// Posisi yang dikirim ke backend: posisi tetap untuk format full-screen.
+  int get _effectivePosition => kAdFullScreenPositions[_kind] ?? _position;
 
   @override
   void initState() {
     super.initState();
     if (_isEdit) {
-      _kind = (widget.row!['type'] ?? 'image').toString() == 'admob' ? 'admob' : 'image';
+      final type = (widget.row!['type'] ?? 'image').toString();
+      _kind = kAdFormats.containsKey(type) ? type : 'image';
       _link.text = (widget.row!['link'] ?? '').toString();
       _admobUnit.text = (widget.row!['admob_unit'] ?? '').toString();
       _existingImage = widget.row!['image']?.toString();
@@ -306,8 +336,8 @@ class _AdminAdFormScreenState extends State<AdminAdFormScreen> {
         id: widget.row?['id'] as int?,
         kind: _kind,
         link: _isAdmob ? '' : _link.text.trim(),
-        position: _position,
-        categoryId: _position == 100 ? _categoryId : null,
+        position: _effectivePosition,
+        categoryId: _effectivePosition == 100 ? _categoryId : null,
         imagePath: _isAdmob ? null : _pickedImage,
         admobUnit: _isAdmob ? _admobUnit.text.trim() : null,
       );
@@ -344,8 +374,9 @@ class _AdminAdFormScreenState extends State<AdminAdFormScreen> {
             'Atas artikel: di atas judul pada halaman artikel (maks. 2). '
             'Antar kategori: di antara kartu kategori, bisa dipasangkan ke kategori tertentu. '
             'Bawah beranda: sebelum footer (maks. 3).\n\n'
-            'Pilih jenis iklan: Gambar (banner biasa) atau AdMob Native '
-            '(iklan in-feed yang menyatu dengan beranda).',
+            'Jenis iklan: Gambar (banner biasa) atau AdMob (native/banner in-feed, '
+            'interstitial, app open, reward). Format full-screen (interstitial, app '
+            'open, reward) ditampilkan lewat pemicu di aplikasi, bukan di dalam feed.',
             style: TextStyle(fontSize: 12.5, color: AppTheme.ink500),
           ),
           const SizedBox(height: 16),
@@ -355,29 +386,36 @@ class _AdminAdFormScreenState extends State<AdminAdFormScreen> {
               initialValue: _kind,
               isExpanded: true,
               decoration: adminInputDecoration(),
-              items: const [
-                DropdownMenuItem(value: 'image', child: Text('Gambar / Banner')),
-                DropdownMenuItem(value: 'admob', child: Text('AdMob Native (in-feed)')),
+              items: [
+                for (final entry in kAdFormats.entries)
+                  DropdownMenuItem(value: entry.key, child: Text(entry.value)),
               ],
               onChanged: (v) => setState(() => _kind = v ?? 'image'),
             ),
           ),
-          AdminField(
-            label: 'Penempatan',
-            child: DropdownButtonFormField<int>(
-              initialValue: _position,
-              isExpanded: true,
-              decoration: adminInputDecoration(),
-              items: const [
-                DropdownMenuItem(value: 100, child: Text('Antar kategori beranda')),
-                DropdownMenuItem(value: 102, child: Text('Atas beranda (maks. 2)')),
-                DropdownMenuItem(value: 101, child: Text('Bawah beranda (maks. 3)')),
-                DropdownMenuItem(value: 103, child: Text('Atas artikel (maks. 2)')),
-              ],
-              onChanged: (v) => setState(() => _position = v ?? 100),
+          if (!_isFullScreen)
+            AdminField(
+              label: 'Penempatan',
+              child: DropdownButtonFormField<int>(
+                initialValue: _position,
+                isExpanded: true,
+                decoration: adminInputDecoration(),
+                items: const [
+                  DropdownMenuItem(value: 100, child: Text('Antar kategori beranda')),
+                  DropdownMenuItem(value: 102, child: Text('Atas beranda (maks. 2)')),
+                  DropdownMenuItem(value: 101, child: Text('Bawah beranda (maks. 3)')),
+                  DropdownMenuItem(value: 103, child: Text('Atas artikel (maks. 2)')),
+                ],
+                onChanged: (v) => setState(() => _position = v ?? 100),
+              ),
+            )
+          else
+            AdminField(
+              label: 'Penempatan',
+              child: Text(kAdFormats[_kind] ?? '',
+                  style: const TextStyle(fontSize: 13.5, color: AppTheme.ink600)),
             ),
-          ),
-          if (_position == 100)
+          if (!_isFullScreen && _position == 100)
             AdminField(
               label: 'Tampilkan di bawah kategori',
               child: DropdownButtonFormField<int?>(
@@ -403,8 +441,8 @@ class _AdminAdFormScreenState extends State<AdminAdFormScreen> {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Salin Ad Unit ID dari dasbor AdMob (format ca-app-pub-…). '
-                  'ID ini ditampilkan sebagai iklan native di dalam aplikasi.',
+                  'Salin Ad Unit ID dari dasbor AdMob sesuai format terpilih '
+                  '(Native advanced / Banner / Interstitial / App open / Reward).',
                   style: TextStyle(fontSize: 12, color: AppTheme.ink500),
                 ),
               ]),

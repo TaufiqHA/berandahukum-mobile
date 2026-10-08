@@ -15,6 +15,7 @@ import 'screens/bookmarks_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/questions_screen.dart';
 import 'screens/search_screen.dart';
+import 'services/ad_manager.dart';
 import 'state/admin_auth.dart';
 import 'state/bookmarks.dart';
 
@@ -93,8 +94,33 @@ Future<void> main() async {
   );
 }
 
-class BerandaHukumApp extends StatelessWidget {
+class BerandaHukumApp extends StatefulWidget {
   const BerandaHukumApp({super.key});
+
+  @override
+  State<BerandaHukumApp> createState() => _BerandaHukumAppState();
+}
+
+class _BerandaHukumAppState extends State<BerandaHukumApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Iklan app open ditampilkan saat aplikasi kembali aktif.
+    if (state == AppLifecycleState.resumed) {
+      AdManager.instance.maybeShowAppOpen();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

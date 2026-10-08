@@ -141,3 +141,136 @@ class _AdMobNativeViewState extends State<AdMobNativeView> {
     );
   }
 }
+
+/// Iklan AdMob format banner (in-feed). Hanya aktif di Android/iOS.
+class AdMobBannerView extends StatefulWidget {
+  /// Ad Unit ID dari panel admin.
+  final String adUnitId;
+  final EdgeInsets padding;
+
+  const AdMobBannerView({
+    super.key,
+    required this.adUnitId,
+    this.padding = const EdgeInsets.symmetric(horizontal: 12),
+  });
+
+  @override
+  State<AdMobBannerView> createState() => _AdMobBannerViewState();
+}
+
+class _AdMobBannerViewState extends State<AdMobBannerView> {
+  BannerAd? _ad;
+  bool _loaded = false;
+  bool _started = false;
+  String? _error;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    // Lebar layar dipakai untuk banner adaptif. Dimuat setelah frame pertama
+    // agar tidak menghambat start-up.
+    final width = MediaQuery.sizeOf(context).width.truncate();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _load(width);
+    });
+  }
+
+  Future<void> _load(int width) async {
+    if (!(Platform.isAndroid || Platform.isIOS)) return;
+    if (widget.adUnitId.isEmpty) {
+      debugPrint('AdMob: Ad Unit ID banner kosong, iklan dilewati.');
+      return;
+    }
+
+    // Ukuran banner adaptif (lebar penuh, tinggi optimal) dihitung di platform.
+    AdSize size = AdSize.banner;
+    try {
+      size = await AdSize.getLargeAnchoredAdaptiveBannerAdSize(width) ?? AdSize.banner;
+    } catch (_) {
+      size = AdSize.banner;
+    }
+    if (!mounted) return;
+
+    try {
+      final ad = BannerAd(
+        adUnitId: widget.adUnitId,
+        size: size,
+        request: const AdRequest(),
+        listener: BannerAdListener(
+          onAdLoaded: (ad) {
+            debugPrint('AdMob: banner dimuat (${widget.adUnitId}).');
+            if (!mounted) {
+              ad.dispose();
+              return;
+            }
+            setState(() {
+              _ad = ad as BannerAd;
+              _loaded = true;
+              _error = null;
+            });
+          },
+          onAdFailedToLoad: (ad, error) {
+            debugPrint(
+              'AdMob: gagal memuat banner. '
+              'code=${error.code} domain=${error.domain} message=${error.message}',
+            );
+            ad.dispose();
+            if (mounted) {
+              setState(() {
+                _ad = null;
+                _loaded = false;
+                _error = '${error.code}: ${error.message}';
+              });
+            }
+          },
+        ),
+      );
+      _ad = ad;
+      ad.load();
+    } catch (e, s) {
+      debugPrint('AdMob: gagal memuat banner: $e\n$s');
+    }
+  }
+
+  @override
+  void dispose() {
+    _ad?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded || _ad == null) {
+      if (kDebugMode && _error != null) {
+        return Padding(
+          padding: widget.padding,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF3F3),
+              border: Border.all(color: const Color(0xFFE0B4B4)),
+            ),
+            child: Text(
+              'AdMob banner gagal memuat (debug): $_error',
+              style: const TextStyle(color: Color(0xFFB71C1C), fontSize: 11),
+            ),
+          ),
+        );
+      }
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: widget.padding,
+      child: Center(
+        child: SizedBox(
+          width: _ad!.size.width.toDouble(),
+          height: _ad!.size.height.toDouble(),
+          child: AdWidget(ad: _ad!),
+        ),
+      ),
+    );
+  }
+}

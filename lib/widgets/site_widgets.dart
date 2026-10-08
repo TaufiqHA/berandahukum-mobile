@@ -34,9 +34,21 @@ class AdBannerView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Iklan AdMob native dirender oleh widget khusus (Android/iOS).
-    if (ad.isAdMob) {
-      return AdMobNativeView(adUnitId: ad.admobUnit!, padding: padding);
+    // Iklan AdMob inline dirender oleh widget khusus (Android/iOS).
+    // Format full-screen (interstitial/app open/reward) tidak dirender di feed;
+    // dikelola AdManager lewat pemicu masing-masing.
+    if (ad.isNative) {
+      final unit = ad.admobUnit;
+      if (unit == null || unit.isEmpty) return const SizedBox.shrink();
+      return AdMobNativeView(adUnitId: unit, padding: padding);
+    }
+    if (ad.isBanner) {
+      final unit = ad.admobUnit;
+      if (unit == null || unit.isEmpty) return const SizedBox.shrink();
+      return AdMobBannerView(adUnitId: unit, padding: padding);
+    }
+    if (ad.isFullScreen) {
+      return const SizedBox.shrink();
     }
 
     final url = AppConfig.media(ad.image);

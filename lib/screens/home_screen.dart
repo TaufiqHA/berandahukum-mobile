@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
 import '../models/models.dart';
+import '../services/ad_manager.dart';
 import '../services/api.dart';
 import '../state/app_events.dart';
 import '../widgets/hero_slider.dart';
@@ -12,6 +13,9 @@ import 'info_screen.dart';
 
 void openArticle(BuildContext context, Article a) {
   Navigator.push(context, MaterialPageRoute(builder: (_) => ArticleScreen(uri: a.uri, initialTitle: a.title)));
+  // Interstitial (bila dikonfigurasi) ditampilkan di atas artikel, dengan
+  // pengaturan frekuensi internal AdManager.
+  AdManager.instance.maybeShowInterstitial();
 }
 
 class HomeScreen extends StatefulWidget {
@@ -27,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _future = Api.home();
+    _future = _load();
     // Muat ulang saat iklan (atau data lain) diubah dari panel admin.
     homeReloadSignal.addListener(_onExternalReload);
   }
@@ -38,12 +42,20 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  /// Muat data beranda lalu terapkan konfigurasi iklan full-screen ke AdManager.
+  Future<HomeData> _load() {
+    return Api.home().then((data) {
+      AdManager.instance.configure(data);
+      return data;
+    });
+  }
+
   void _onExternalReload() {
-    if (mounted) setState(() { _future = Api.home(); });
+    if (mounted) setState(() { _future = _load(); });
   }
 
   Future<void> _refresh() async {
-    setState(() { _future = Api.home(); });
+    setState(() { _future = _load(); });
     await _future;
   }
 

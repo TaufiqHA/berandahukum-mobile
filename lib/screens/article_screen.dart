@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/config.dart';
 import '../core/theme.dart';
 import '../models/models.dart';
+import '../services/ad_manager.dart';
 import '../services/api.dart';
 import '../state/bookmarks.dart';
 import '../widgets/cms_html.dart';
@@ -102,6 +103,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
 
   void _openArticle(String uri) {
     Navigator.push(context, MaterialPageRoute(builder: (_) => ArticleScreen(uri: uri)));
+    AdManager.instance.maybeShowInterstitial();
   }
 
   Widget _buildArticle(Article a) {

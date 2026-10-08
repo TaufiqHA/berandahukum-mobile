@@ -19,7 +19,7 @@
              (AdMob → Apps → App settings). -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-4526658832356207~7058948475"/>
+            android:value="ca-app-pub-4526658832356207~4929615749"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -136,10 +136,16 @@ class AdBanner {
   /// `null` = bergilir di celah kategori yang belum punya iklan khusus.
   final int? categoryId;
 
-  /// Jenis iklan: `image` (bawaan) atau `admob`.
+  /// Jenis iklan:
+  ///   - `image`            : banner gambar (bawaan)
+  ///   - `admob` / `admob_native` : AdMob native advanced (in-feed)
+  ///   - `admob_banner`     : AdMob banner (in-feed)
+  ///   - `admob_interstitial` : AdMob interstitial (full-screen)
+  ///   - `admob_app_open`   : AdMob app open (full-screen)
+  ///   - `admob_reward`     : AdMob reward (full-screen)
   final String type;
 
-  /// Ad Unit ID AdMob (diisi saat [type] == `admob`).
+  /// Ad Unit ID AdMob (diisi saat jenisnya AdMob).
   final String? admobUnit;
 
   AdBanner({
@@ -150,8 +156,31 @@ class AdBanner {
     this.admobUnit,
   });
 
+  String get _t => type.toLowerCase();
+
   /// True bila iklan AdMob dan punya Ad Unit ID.
-  bool get isAdMob => type == 'admob' && (admobUnit?.isNotEmpty ?? false);
+  bool get isAdMob => _t.startsWith('admob') && (admobUnit?.isNotEmpty ?? false);
+
+  /// AdMob native advanced (in-feed).
+  bool get isNative => _t == 'admob' || _t == 'admob_native';
+
+  /// AdMob banner (in-feed).
+  bool get isBanner => _t == 'admob_banner';
+
+  /// AdMob interstitial (full-screen, saat membuka artikel).
+  bool get isInterstitial => _t == 'admob_interstitial';
+
+  /// AdMob app open (full-screen, saat aplikasi dibuka).
+  bool get isAppOpen => _t == 'admob_app_open';
+
+  /// AdMob reward (full-screen, atas aksi pengguna).
+  bool get isReward => _t == 'admob_reward';
+
+  /// Format yang dirender langsung di dalam feed.
+  bool get isInline => _t == 'image' || isNative || isBanner;
+
+  /// Format full-screen (dikelola [AdManager], bukan dirender di feed).
+  bool get isFullScreen => isInterstitial || isAppOpen || isReward;
 
   factory AdBanner.fromJson(Map<String, dynamic> j) {
     final link = (j['link'] ?? '') as String;
@@ -207,6 +236,11 @@ class HomeData {
   final List<AdBanner> adsKategori;
   final List<AdBanner> adsAtas;
   final List<AdBanner> adsBawah;
+
+  /// Iklan full-screen (tidak dirender di feed); dikelola [AdManager].
+  final AdBanner? adsInterstitial;
+  final AdBanner? adsAppOpen;
+  final AdBanner? adsReward;
   final bool showPertanyaan;
   final bool showYoutube;
 
@@ -225,6 +259,9 @@ class HomeData {
     this.adsKategori = const [],
     this.adsAtas = const [],
     this.adsBawah = const [],
+    this.adsInterstitial,
+    this.adsAppOpen,
+    this.adsReward,
     required this.showPertanyaan,
     required this.showYoutube,
   });
@@ -250,6 +287,15 @@ class HomeData {
         adsBawah: (j['ads_bawah'] as List? ?? [])
             .map((e) => AdBanner.fromJson(Map<String, dynamic>.from(e)))
             .toList(),
+        adsInterstitial: j['ads_interstitial'] == null
+            ? null
+            : AdBanner.fromJson(Map<String, dynamic>.from(j['ads_interstitial'])),
+        adsAppOpen: j['ads_app_open'] == null
+            ? null
+            : AdBanner.fromJson(Map<String, dynamic>.from(j['ads_app_open'])),
+        adsReward: j['ads_reward'] == null
+            ? null
+            : AdBanner.fromJson(Map<String, dynamic>.from(j['ads_reward'])),
         showPertanyaan: j['show_pertanyaan'] ?? true,
         showYoutube: j['show_youtube'] ?? true,
       );
