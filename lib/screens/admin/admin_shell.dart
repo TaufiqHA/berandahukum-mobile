@@ -59,6 +59,11 @@ class _AdminShellState extends State<AdminShell> {
         title: Text(current.label, style: const TextStyle(fontFamily: 'serif')),
         actions: [
           IconButton(
+            tooltip: 'Beranda',
+            icon: const Icon(Icons.home_outlined),
+            onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+          ),
+          IconButton(
             tooltip: 'Keluar',
             icon: const Icon(Icons.logout),
             onPressed: () async {
@@ -111,6 +116,16 @@ class _AdminShellState extends State<AdminShell> {
                     ),
                 ],
               ),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.home_outlined, color: AppTheme.ink600, size: 20),
+              title: const Text('Kembali ke Beranda', style: TextStyle(color: AppTheme.ink)),
+              onTap: () {
+                final nav = Navigator.of(context);
+                nav.pop(); // tutup drawer
+                nav.popUntil((route) => route.isFirst);
+              },
             ),
           ],
         ),

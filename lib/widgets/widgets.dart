@@ -112,7 +112,7 @@ class StoryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          MagazineImage(path: a.image),
+          MagazineImage(path: a.featuredImage),
           const SizedBox(height: 10),
           if (kicker != null) ...[
             Text(kicker.toUpperCase(), style: const TextStyle(color: AppTheme.brand, fontWeight: FontWeight.w800, letterSpacing: 1, fontSize: 10.5)),

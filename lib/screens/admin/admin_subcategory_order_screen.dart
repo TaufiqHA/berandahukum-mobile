@@ -46,7 +46,7 @@ class _AdminSubCategoryOrderScreenState extends State<AdminSubCategoryOrderScree
       _rows.insert(newIndex, item);
     });
     try {
-      await AdminApi.saveSubCategoryOrder(_rows.map((r) => r['id'] as int).toList());
+      await AdminApi.saveSubCategoryOrder(widget.categoryId, _rows.map((r) => r['id'] as int).toList());
       if (mounted) adminSnack(context, 'Urutan sub kategori disimpan.');
     } catch (e) {
       if (mounted) adminSnack(context, e.toString(), error: true);

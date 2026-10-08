@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
+import 'package:html/dom.dart' as dom;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/config.dart';
@@ -24,8 +25,18 @@ class CmsHtml extends StatelessWidget {
     return HtmlWidget(
       sanitizeCmsHtml(html),
       textStyle: textStyle,
+      customStylesBuilder: _paragraphStyle,
       onTapUrl: (url) => _onTap(url),
     );
+  }
+
+  /// Samakan spasi paragraf dengan website (`p { margin: 0 0 1.15em }`).
+  /// Default `flutter_widget_from_html_core` memakai `margin: 1em 0`
+  /// sehingga jarak antar paragraf menjadi dua kali lipat dan tampilan
+  /// artikel terlihat renggang/berantakan dibanding website.
+  static Map<String, String>? _paragraphStyle(dom.Element element) {
+    if (element.localName == 'p') return const {'margin': '0 0 1.15em'};
+    return null;
   }
 
   Future<bool> _onTap(String url) async {

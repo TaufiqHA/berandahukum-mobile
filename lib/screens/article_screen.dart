@@ -131,7 +131,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
         const SizedBox(height: 12),
         _ShareRow(uri: a.uri, title: a.title),
         const Divider(height: 28),
-        if (a.image != null) ...[MagazineImage(path: a.image, aspectRatio: 16 / 9), const SizedBox(height: 16)],
+        if (a.featuredImage != null) ...[MagazineImage(path: a.featuredImage, aspectRatio: 16 / 9), const SizedBox(height: 16)],
         CmsHtml(
           a.content ?? '',
           textStyle: const TextStyle(fontSize: 16.5, height: 1.7, color: AppTheme.ink),

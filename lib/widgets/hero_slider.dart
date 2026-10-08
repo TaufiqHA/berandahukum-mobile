@@ -78,7 +78,7 @@ class _HeroSliderState extends State<HeroSlider> {
                     SizedBox(
                       height: imageHeight,
                       width: double.infinity,
-                      child: MagazineImage(path: a.image, expand: true),
+                      child: MagazineImage(path: a.featuredImage, expand: true),
                     ),
                     Container(
                       height: captionHeight,

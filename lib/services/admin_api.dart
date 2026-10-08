@@ -193,8 +193,8 @@ class AdminApi {
     return id == null ? _post('sub-categories', body).then((_) {}) : _post('sub-categories/$id', body).then((_) {});
   }
 
-  static Future<void> saveSubCategoryOrder(List<int> ids) =>
-      _post('sub-categories/urutan', {'position': ids}).then((_) {});
+  static Future<void> saveSubCategoryOrder(int categoryId, List<int> ids) =>
+      _post('sub-categories/urutan', {'category_id': categoryId, 'position': ids}).then((_) {});
 
   static Future<void> deleteSubCategory(int id) => _delete('sub-categories/$id').then((_) {});
 

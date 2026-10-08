@@ -73,6 +73,20 @@ class Article {
         'author': author,
         'views': views,
       };
+
+  /// Logo default situs yang bisa tersimpan sebagai gambar artikel walau
+  /// artikel sebenarnya tidak punya gambar.
+  static const _defaultImages = {'beranda-hukum.jpg', 'beranda_hukum_square.png'};
+
+  /// Gambar unggulan artikel; `null` bila tidak ada gambar atau hanya logo
+  /// default. Dipakai agar logo situs tidak tampil sebagai gambar artikel.
+  String? get featuredImage {
+    final img = image;
+    if (img == null || img.isEmpty) return null;
+    final name = img.split('/').last.split('?').first;
+    if (_defaultImages.contains(name)) return null;
+    return img;
+  }
 }
 
 class ArticleCategoryRef {
