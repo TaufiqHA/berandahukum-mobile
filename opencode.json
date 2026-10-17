@@ -4,7 +4,7 @@
       "dart": {
         "type": "local",
         "command": [
-          "/home/padikering/development/flutter/bin/dart",
+          "/home/padikering/develop/flutter/bin/dart",
           "mcp-server"
         ]
       },
@@ -18,7 +18,7 @@
           "/home/padikering/.bun/bin/bunx",
           "-y",
           "@modelcontextprotocol/server-filesystem",
-          "/home/padikering/Documents/KERJA/BerandaHukum/mobile"
+          "/home/padikering/Documents/KERJA/berandahukum new/mobile"
         ]
       },
       "git": {
@@ -28,7 +28,7 @@
           "@cyanheads/git-mcp-server@latest"
         ],
         "environment": {
-          "GIT_BASE_DIR": "/home/padikering/Documents/KERJA/BerandaHukum/mobile",
+          "GIT_BASE_DIR": "/home/padikering/Documents/KERJA/berandahukum new/mobile",
           "MCP_TRANSPORT_TYPE": "stdio"
         }
       }
