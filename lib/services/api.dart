@@ -109,6 +109,21 @@ class Api {
   static Future<Article> article(String uri) async =>
       Article.fromJson(await _get('articles/$uri'));
 
+  /// Pencarian artikel. Respons tidak memuat gambar; excerpt dilengkapi
+  /// `excerpt_segments` untuk highlight kata kunci.
+  static Future<Paged<Article>> search({
+    required String q,
+    int page = 1,
+    int perPage = 20,
+  }) async {
+    final j = await _get('search', {
+      'q': q,
+      'page': page,
+      'per_page': perPage,
+    });
+    return _paged(j, (e) => Article.fromJson(e));
+  }
+
   static Future<List<Category>> categories() async =>
       (await _getList('categories')).map((e) => Category.fromJson(e)).toList();
 

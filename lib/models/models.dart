@@ -3,6 +3,10 @@ class Article {
   final String uri;
   final String title;
   final String excerpt;
+
+  /// Potongan isi hasil pencarian beserta penanda kata kunci, dikirim API
+  /// sebagai `excerpt_segments`.
+  final List<ExcerptSegment> excerptSegments;
   final String? image;
   final String date;
   final String author;
@@ -24,6 +28,7 @@ class Article {
     required this.uri,
     required this.title,
     this.excerpt = '',
+    this.excerptSegments = const [],
     this.image,
     this.date = '',
     this.author = '',
@@ -44,6 +49,9 @@ class Article {
         uri: j['uri'] ?? '',
         title: j['title'] ?? '',
         excerpt: j['excerpt'] ?? '',
+        excerptSegments: (j['excerpt_segments'] as List? ?? [])
+            .map((e) => ExcerptSegment.fromJson(Map<String, dynamic>.from(e)))
+            .toList(),
         image: j['image'],
         date: j['date'] ?? '',
         author: j['author'] ?? '',
@@ -87,6 +95,20 @@ class Article {
     if (_defaultImages.contains(name)) return null;
     return img;
   }
+}
+
+/// Satu potongan teks excerpt hasil pencarian. `highlight` menandai kata
+/// kunci yang harus diwarnai di aplikasi.
+class ExcerptSegment {
+  final String text;
+  final bool highlight;
+
+  const ExcerptSegment({required this.text, this.highlight = false});
+
+  factory ExcerptSegment.fromJson(Map<String, dynamic> j) => ExcerptSegment(
+        text: j['text']?.toString() ?? '',
+        highlight: j['highlight'] == true,
+      );
 }
 
 class ArticleCategoryRef {

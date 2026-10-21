@@ -128,6 +128,75 @@ class StoryCard extends StatelessWidget {
   }
 }
 
+/// Kartu hasil pencarian: tanpa gambar, dengan potongan isi yang kata
+/// kuncinya disorot seperti `<mark>` di web.
+class SearchResultCard extends StatelessWidget {
+  final Article a;
+  final VoidCallback onTap;
+
+  const SearchResultCard({super.key, required this.a, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasExcerpt = a.excerptSegments.isNotEmpty || a.excerpt.isNotEmpty;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              a.title,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontFamily: 'serif',
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                height: 1.18,
+                color: AppTheme.ink,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '${_date(a.date)}${a.author.isEmpty ? '' : ' · ${a.author}'}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 10.5, letterSpacing: .4, color: AppTheme.ink500),
+            ),
+            if (hasExcerpt) ...[
+              const SizedBox(height: 8),
+              Text.rich(
+                TextSpan(
+                  children: a.excerptSegments.isNotEmpty
+                      ? a.excerptSegments
+                          .map((segment) => TextSpan(
+                                text: segment.text,
+                                style: segment.highlight
+                                    ? const TextStyle(
+                                        backgroundColor: Color(0xFFFDE68A),
+                                        color: AppTheme.ink,
+                                        fontWeight: FontWeight.w600,
+                                      )
+                                    : null,
+                              ))
+                          .toList()
+                      : [TextSpan(text: a.excerpt)],
+                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13.5, height: 1.45, color: AppTheme.ink600),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 String _date(String raw) {
   if (raw.isEmpty) return '';
   try {

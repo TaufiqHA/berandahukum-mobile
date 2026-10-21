@@ -28,7 +28,7 @@ class _SearchScreenState extends State<SearchScreen> {
       _error = null;
     });
     try {
-      final p = await Api.articles(q: q, perPage: 20);
+      final p = await Api.search(q: q, perPage: 20);
       setState(() {
         _results = p.data;
         _searched = true;
@@ -89,7 +89,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                         itemCount: _results.length,
                                         itemBuilder: (context, i) => Padding(
                                           padding: const EdgeInsets.only(bottom: 18),
-                                          child: StoryCard(a: _results[i], onTap: () => openArticle(context, _results[i])),
+                                          child: SearchResultCard(a: _results[i], onTap: () => openArticle(context, _results[i])),
                                         ),
                                       ),
                               ),
