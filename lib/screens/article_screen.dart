@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/config.dart';
+import '../core/html_utils.dart';
 import '../core/theme.dart';
 import '../models/models.dart';
 import '../services/ad_manager.dart';
@@ -30,10 +31,27 @@ class _ArticleScreenState extends State<ArticleScreen> {
   final _comment = TextEditingController();
   bool _sending = false;
 
+  // Pencarian "di dalam artikel" (mirip kotak cari pada header situs web).
+  final _searchController = TextEditingController();
+  final _cmsController = CmsHtmlController();
+  bool _searchOpen = false;
+  String _searchTerm = '';
+  String? _highlightedHtml;
+  int _hitCount = 0;
+  int _hitIndex = 0;
+
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _comment.dispose();
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -43,6 +61,7 @@ class _ArticleScreenState extends State<ArticleScreen> {
       setState(() {
         _article = a;
         _loading = false;
+        _resetArticleSearch();
       });
     } catch (e) {
       setState(() {
@@ -71,6 +90,145 @@ class _ArticleScreenState extends State<ArticleScreen> {
     }
   }
 
+  void _resetArticleSearch({bool close = true}) {
+    _searchTerm = '';
+    _highlightedHtml = null;
+    _hitCount = 0;
+    _hitIndex = 0;
+    if (close) {
+      _searchOpen = false;
+      _searchController.clear();
+    }
+  }
+
+  void _openArticleSearch() {
+    setState(() => _searchOpen = true);
+  }
+
+  void _closeArticleSearch() {
+    FocusScope.of(context).unfocus();
+    setState(() => _resetArticleSearch());
+  }
+
+  void _submitArticleSearch() {
+    final content = _article?.content;
+    final term = _searchController.text.trim();
+    if (content == null || term.isEmpty) {
+      setState(() => _resetArticleSearch(close: false));
+      return;
+    }
+
+    // Kata yang sama: lanjut ke hasil berikutnya seperti perilaku di web.
+    if (term == _searchTerm && _hitCount > 0) {
+      _moveToHit(_hitIndex + 1);
+      return;
+    }
+
+    final result = highlightCmsHits(content, term);
+    if (result.count == 0) {
+      setState(() {
+        _searchTerm = term;
+        _highlightedHtml = null;
+        _hitCount = 0;
+        _hitIndex = 0;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kata tidak ditemukan di artikel ini.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _searchTerm = term;
+      _highlightedHtml = result.html;
+      _hitCount = result.count;
+      _hitIndex = 0;
+    });
+    _scrollToCurrentHit(0);
+  }
+
+  void _moveToHit(int index) {
+    final content = _article?.content;
+    if (content == null || _searchTerm.isEmpty || _hitCount == 0) return;
+
+    final next = (index % _hitCount + _hitCount) % _hitCount;
+    final result = highlightCmsHits(content, _searchTerm, activeIndex: next);
+    setState(() {
+      _highlightedHtml = result.html;
+      _hitCount = result.count;
+      _hitIndex = next;
+    });
+    _scrollToCurrentHit(next);
+  }
+
+  Future<void> _scrollToCurrentHit(int index) async {
+    final id = 'cms-hit-$index';
+
+    // Artikel panjang (>10.000 karakter) dibangun secara asynchronous oleh
+    // HtmlWidget, sehingga anchor hasil sorotan belum tentu terdaftar pada
+    // frame pertama. Tunggu sampai siap dengan batas waktu yang wajar.
+    for (var attempt = 0; attempt < 12; attempt++) {
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return;
+      if (await _cmsController.scrollToAnchor(id)) return;
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+  }
+
+  PreferredSizeWidget _buildArticleSearchBar() {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(56),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 4, 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                autofocus: true,
+                textInputAction: TextInputAction.search,
+                onSubmitted: (_) => _submitArticleSearch(),
+                onChanged: (value) {
+                  if (value.trim().isEmpty && _searchTerm.isNotEmpty) {
+                    setState(() => _resetArticleSearch(close: false));
+                  }
+                },
+                decoration: const InputDecoration(
+                  isDense: true,
+                  hintText: 'Cari di artikel…',
+                  prefixIcon: Icon(Icons.search, size: 20),
+                ),
+              ),
+            ),
+            if (_hitCount > 0)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  '${_hitIndex + 1}/$_hitCount',
+                  style: const TextStyle(fontSize: 12, color: AppTheme.ink500),
+                ),
+              ),
+            IconButton(
+              tooltip: 'Hasil sebelumnya',
+              onPressed: _hitCount > 0 ? () => _moveToHit(_hitIndex - 1) : null,
+              icon: const Icon(Icons.keyboard_arrow_up),
+            ),
+            IconButton(
+              tooltip: 'Hasil berikutnya',
+              onPressed: _hitCount > 0 ? () => _moveToHit(_hitIndex + 1) : null,
+              icon: const Icon(Icons.keyboard_arrow_down),
+            ),
+            IconButton(
+              tooltip: 'Tutup pencarian',
+              onPressed: _closeArticleSearch,
+              icon: const Icon(Icons.close),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bookmarks = context.watch<Bookmarks>();
@@ -79,7 +237,14 @@ class _ArticleScreenState extends State<ArticleScreen> {
       appBar: AppBar(
         title: Text(widget.initialTitle ?? 'Artikel', maxLines: 1, overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontFamily: 'serif', fontSize: 17)),
+        bottom: _searchOpen && a != null ? _buildArticleSearchBar() : null,
         actions: [
+          if (a != null && !_searchOpen)
+            IconButton(
+              tooltip: 'Cari di artikel',
+              onPressed: _openArticleSearch,
+              icon: const Icon(Icons.search, color: AppTheme.ink),
+            ),
           if (a != null)
             IconButton(
               tooltip: bookmarks.has(a.id) ? 'Hapus dari simpanan' : 'Simpan',
@@ -133,7 +298,11 @@ class _ArticleScreenState extends State<ArticleScreen> {
         const Divider(height: 28),
         if (a.featuredImage != null) ...[MagazineImage(path: a.featuredImage, aspectRatio: 16 / 9), const SizedBox(height: 16)],
         CmsHtml(
-          a.content ?? '',
+          _highlightedHtml ?? a.content ?? '',
+          controller: _cmsController,
+          // Render sinkron agar anchor hasil pencarian langsung tersedia
+          // untuk digulir (artikel panjang biasanya memakai render async).
+          buildAsync: false,
           textStyle: const TextStyle(fontSize: 16.5, height: 1.7, color: AppTheme.ink),
           onArticle: _openArticle,
         ),

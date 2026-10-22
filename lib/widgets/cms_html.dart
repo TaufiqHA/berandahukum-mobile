@@ -6,6 +6,18 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/config.dart';
 import '../core/html_utils.dart';
 
+/// Pengendali tampilan [CmsHtml], mis. untuk melompat ke anchor hasil
+/// pencarian di dalam artikel.
+class CmsHtmlController {
+  final _htmlKey = GlobalKey<HtmlWidgetState>();
+
+  /// Menggulir tampilan ke elemen dengan `id` tertentu.
+  ///
+  /// Mengembalikan `true` bila anchor ditemukan dan berhasil digulir.
+  Future<bool> scrollToAnchor(String id) async =>
+      await _htmlKey.currentState?.scrollToAnchor(id) ?? false;
+}
+
 /// Menampilkan HTML dari CMS dengan penanganan tautan yang benar.
 ///
 /// Tautan ke artikel internal (`/a/<uri>` atau `/article/<uri>`) dibuka di
@@ -15,15 +27,32 @@ class CmsHtml extends StatelessWidget {
   final String html;
   final TextStyle? textStyle;
 
+  /// Pengendali opsional untuk mengarahkan tampilan HTML (mis. scroll ke
+  /// sorotan hasil pencarian).
+  final CmsHtmlController? controller;
+
+  /// Paksa render sinkron/asinkron. Berguna saat konten perlu langsung
+  /// memiliki anchor (mis. pencarian di dalam artikel) agar bisa digulir.
+  final bool? buildAsync;
+
   /// Dipanggil dengan URI artikel saat tautan internal disentuh.
   final void Function(String uri)? onArticle;
 
-  const CmsHtml(this.html, {super.key, this.textStyle, this.onArticle});
+  const CmsHtml(
+    this.html, {
+    super.key,
+    this.textStyle,
+    this.controller,
+    this.buildAsync,
+    this.onArticle,
+  });
 
   @override
   Widget build(BuildContext context) {
     return HtmlWidget(
       sanitizeCmsHtml(html),
+      key: controller?._htmlKey,
+      buildAsync: buildAsync,
       textStyle: textStyle,
       customStylesBuilder: _paragraphStyle,
       onTapUrl: (url) => _onTap(url),

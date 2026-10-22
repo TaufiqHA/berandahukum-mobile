@@ -68,7 +68,9 @@ void _normalizeLayoutTables(dom.DocumentFragment fragment) {
       .toList();
 
   for (final table in tables.reversed) {
-    if (_closestTable(table.parent) != null) continue; // biarkan tabel bersarang
+    if (_closestTable(table.parent) != null) {
+      continue; // biarkan tabel bersarang
+    }
     _normalizeTable(table);
   }
 }
@@ -175,6 +177,96 @@ String _tidyStyle(String style) {
   return s;
 }
 
+/// Hasil penyorotan kata kunci di dalam HTML artikel.
+class CmsSearchResult {
+  /// HTML dengan setiap kecocokan dibungkus `<mark>`.
+  final String html;
+
+  /// Jumlah kecocokan yang ditemukan.
+  final int count;
+
+  const CmsSearchResult(this.html, this.count);
+}
+
+/// Menyorot semua kemunculan [term] di dalam [html] untuk pencarian
+/// "di dalam artikel" (mirip tombol cari pada header situs web).
+///
+/// Setiap kecocokan dibungkus `<mark id="cms-hit-N" data-cms-hit="1">` agar
+/// bisa dituju lewat anchor. Kecocokan pada [activeIndex] diberi atribut
+/// `data-active="1"` supaya tampil berbeda dari sorotan lainnya.
+///
+/// Pencarian hanya menyentuh text node; isi `<script>`/`<style>` diabaikan.
+/// Kata yang terpotong tag inline (mis. `hu<b>kum</b>`) tidak akan cocok.
+CmsSearchResult highlightCmsHits(
+  String? html,
+  String term, {
+  int activeIndex = 0,
+}) {
+  if (html == null || html.isEmpty) return const CmsSearchResult('', 0);
+
+  final keyword = term.trim();
+  if (keyword.isEmpty) return CmsSearchResult(html, 0);
+
+  final fragment = html_parser.parseFragment(html);
+  final regex = RegExp(RegExp.escape(keyword), caseSensitive: false);
+  final nodes = <dom.Text>[];
+  _collectSearchTextNodes(fragment, regex, nodes);
+
+  var index = 0;
+  for (final node in nodes) {
+    final text = node.data;
+    final replacement = dom.DocumentFragment();
+    var last = 0;
+
+    for (final match in regex.allMatches(text)) {
+      if (match.start > last) {
+        replacement.nodes.add(dom.Text(text.substring(last, match.start)));
+      }
+
+      final isActive = index == activeIndex;
+      final mark = dom.Element.tag('mark')
+        ..attributes['id'] = 'cms-hit-$index'
+        ..attributes['data-cms-hit'] = '1'
+        ..attributes['style'] = isActive
+            ? 'background-color: #c1121f; color: #ffffff;'
+            : 'background-color: #fde68a; color: #111110;';
+      if (isActive) {
+        mark.attributes['data-active'] = '1';
+      }
+      mark.nodes.add(dom.Text(match.group(0)!));
+      replacement.nodes.add(mark);
+
+      last = match.end;
+      index++;
+    }
+
+    if (last < text.length) {
+      replacement.nodes.add(dom.Text(text.substring(last)));
+    }
+    node.replaceWith(replacement);
+  }
+
+  return CmsSearchResult(fragment.outerHtml, index);
+}
+
+void _collectSearchTextNodes(dom.Node node, RegExp regex, List<dom.Text> out) {
+  for (final child in node.nodes) {
+    if (child is dom.Text) {
+      final data = child.data;
+      if (data.trim().isEmpty) continue;
+      if (regex.hasMatch(data)) out.add(child);
+      continue;
+    }
+
+    if (child is dom.Element) {
+      final name = child.localName;
+      if (name == 'script' || name == 'style') continue;
+      if (child.attributes.containsKey('data-cms-hit')) continue;
+      _collectSearchTextNodes(child, regex, out);
+    }
+  }
+}
+
 /// Mengambil URI artikel internal dari sebuah tautan di dalam konten CMS.
 ///
 /// Tautan ke artikel lain bisa disimpan TinyMCE sebagai URL relatif
@@ -205,7 +297,8 @@ String? internalArticleUri(String url, {String baseUrl = ''}) {
   }
 
   final segments = uri.pathSegments;
-  if (segments.length >= 2 && (segments[0] == 'a' || segments[0] == 'article')) {
+  if (segments.length >= 2 &&
+      (segments[0] == 'a' || segments[0] == 'article')) {
     return segments[1];
   }
   return null;
